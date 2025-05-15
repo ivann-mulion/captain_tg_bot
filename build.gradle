@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'src'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+application {
+    mainClass = 'com.nemchinov.bot.BotApplication'
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.mulion.bot.BotApplication'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+dependencies {
+    implementation('org.telegram:telegrambots:6.9.7.1')
+
+    implementation("org.apache.commons:commons-lang3:3.17.0")
+
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+    implementation("com.fasterxml.jackson.core:jackson-annotations:2.18.3")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
+    annotationProcessor("com.fasterxml.jackson.core:jackson-annotations:2.18.3")
+
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation('org.junit.jupiter:junit-jupiter')
+}
+
+test {
+    useJUnitPlatform()
+}
