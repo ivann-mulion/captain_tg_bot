@@ -1,20 +1,17 @@
 package com.mulion.telegram_bot_application;
 
 import com.mulion.enums.Date;
-import com.mulion.models.Report;
 import com.mulion.services.ConfigService;
 import com.mulion.services.ReportService;
 import com.mulion.services.UserService;
-import com.mulion.utils.Utils;
+import com.mulion.constants.Config;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
@@ -29,6 +26,10 @@ public class BotApplication extends TelegramLongPollingBot {
     public static final String BOT_USER_NAME = "tg.bot_user_name";
     public static final String CHOOSE_DATE_MESSAGE = "Выберите дату отчета:";
 
+    public BotApplication() {
+        super(ConfigService.getProperty(TOKEN));
+    }
+
     public static void main(String[] args) {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
@@ -37,11 +38,6 @@ public class BotApplication extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public String getBotToken() {
-        return ConfigService.getProperty(TOKEN);
     }
 
     @Override
@@ -65,7 +61,7 @@ public class BotApplication extends TelegramLongPollingBot {
         if (messageText.matches("\\d{2}.\\d{2}.\\d{4}")) {
             long userId = update.getMessage().getFrom().getId();
             try {
-                LocalDate date = LocalDate.parse(messageText, Utils.reportDateFormatter);
+                LocalDate date = LocalDate.parse(messageText, Config.reportDateFormatter);
                 sendReport(chatId, userId, date);
                 return;
             } catch (RuntimeException e) {
@@ -117,41 +113,13 @@ public class BotApplication extends TelegramLongPollingBot {
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
-        Report report = ReportService.getReport(UserService.getUser(userId), date);
-        sendText(chatId, report.getReportText());
+        sendText(chatId, ReportService.getReportMessage(UserService.getUser(userId), date));
     }
 
     private void sendText(long chatId, String text) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(text);
-
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void sendKeyboard(long chatId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("отчет за :");
-
-        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
-        List<KeyboardRow> keyboard = new ArrayList<>();
-
-        KeyboardRow row = new KeyboardRow();
-        row.add("вчера");
-        row.add("сегодня");
-        row.add("за дату");
-
-        keyboard.add(row);
-        keyboardMarkup.setKeyboard(keyboard);
-        keyboardMarkup.setResizeKeyboard(true);
-
-        message.setReplyMarkup(keyboardMarkup);
 
         try {
             execute(message);
