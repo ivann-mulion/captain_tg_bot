@@ -1,11 +1,17 @@
 package com.mulion.models;
 
-import com.mulion.enums.RegistrationStatus;
-import com.mulion.yclients_models.services.YCUserService;
+import com.mulion.data_base.listeners.UserListener;
+import com.mulion.enums.UserRole;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,6 +21,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Getter
@@ -24,6 +32,8 @@ import java.util.Objects;
 @Table(name = "users")
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@EntityListeners({UserListener.class})
 public class User {
     @Id
     private Long id;
@@ -31,33 +41,44 @@ public class User {
     @Column(name = "user_name")
     private String tgUserName;
     private String name;
+    @Column(name = "user_token")
     private String userToken;
-    private long staffId;
+    private UserRole role;
+    @ManyToMany
+    @ToString.Exclude
+    @JoinTable(
+            name = "users_to_boats",
+            joinColumns = {
+                    @JoinColumn(name = "user_id", referencedColumnName = "id")
+            },
+            inverseJoinColumns = {
+                    @JoinColumn(name = "boat_id", referencedColumnName = "id")
+            }
+    )
+    private final List<Boat> boats = new ArrayList<>();
     private String login;
     private String password;
     private int cash;
-    private RegistrationStatus registrationStatus;
-
-    public User(Long id, String tgUserName, String name, String userToken, long staffId, String login, String password, int cash, RegistrationStatus registrationStatus) {
-        this.id = id;
-        this.tgUserName = tgUserName;
-        this.name = name;
-        this.staffId = staffId;
-        this.login = login;
-        this.password = password;
-        this.cash = cash;
-        this.userToken = userToken;
-        this.registrationStatus = registrationStatus;
-        if (userToken == null) {
-            YCUserService.authorization(this);
-        }
-    }
+    @Embedded
+    private Steps steps;
 
     public String getLoginAndPassword() {
         return new ToStringBuilder(this, ToStringStyle.JSON_STYLE)
                 .append("login", login)
                 .append("password", password)
                 .toString();
+    }
+
+    public void addBoat(Boat boat) {
+        if (boat == null) return;
+        boats.add(boat);
+        boat.addUser(this);
+    }
+
+    public void removeBoat(Boat boat) {
+        if (boat == null) return;
+        boats.remove(boat);
+        boat.removeUser(this);
     }
 
     public void addCash(int cash) {

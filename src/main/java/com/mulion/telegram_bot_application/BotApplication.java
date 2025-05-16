@@ -4,12 +4,14 @@ import com.mulion.data_base.SessionProvider;
 import com.mulion.data_base.repository.UserRepository;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.enums.RegistrationStatus;
+import com.mulion.enums.UserRole;
 import com.mulion.models.User;
 import com.mulion.telegram_bot_application.enums.Date;
 import com.mulion.services.ConfigService;
 import com.mulion.services.ReportService;
 import com.mulion.constants.Config;
-import com.mulion.yclients_models.services.YCUserService;
+import com.mulion.telegram_bot_application.services.MessageService;
+import com.mulion.yclients.services.YCUserService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -31,16 +33,21 @@ public class BotApplication extends TelegramLongPollingBot {
     public static final String BOT_USER_NAME = "tg.bot_user_name";
     public static final String CHOOSE_DATE_MESSAGE = "Выберите дату отчета:";
 
-    private final DBUserService userService = new DBUserService(new UserRepository(new SessionProvider().getSessionFactory()));
+    private final DBUserService userService;
+    private final AdminBotInterface adminInterface;
+    private final MessageService messageService;
 
-    public BotApplication() {
-        super(ConfigService.getProperty(TOKEN));
+    public BotApplication(String token) {
+        super(token);
+        userService = new DBUserService(new UserRepository(new SessionProvider().getSessionFactory()));
+        adminInterface = new AdminBotInterface();
+        messageService = new MessageService(getOptions(), token);
     }
 
     public static void main(String[] args) {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new BotApplication());
+            botsApi.registerBot(new BotApplication(ConfigService.getProperty(TOKEN)));
             System.out.println(START_MESSAGE);
         } catch (TelegramApiException e) {
             e.printStackTrace();
@@ -54,10 +61,6 @@ public class BotApplication extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasCallbackQuery()) {
-            handleCallback(update.getCallbackQuery());
-            return;
-        }
         if (!(update.hasMessage() && update.getMessage().hasText())) {
             return;
         }
@@ -69,8 +72,15 @@ public class BotApplication extends TelegramLongPollingBot {
             registration(user, update);
             return;
         }
-        if (user.getRegistrationStatus() != RegistrationStatus.DONE) {
+        if (user.getSteps().getRegistrationStatus() != RegistrationStatus.DONE) {
             registration(user, update);
+            return;
+        }
+        if (user.getRole() == UserRole.ADMIN) {
+            adminInterface.onUpdateReceived(user, update);
+        }
+        if (update.hasCallbackQuery()) {
+            handleCallback(update.getCallbackQuery());
             return;
         }
 
@@ -93,7 +103,7 @@ public class BotApplication extends TelegramLongPollingBot {
     private void registration(User user, Update update) {
         long chatId = update.getMessage().getChatId();
         String messageText = update.getMessage().getText();
-        RegistrationStatus status = user.getRegistrationStatus();
+        RegistrationStatus status = user.getSteps().getRegistrationStatus();
         switch (status) {
             case START -> {
                 String helloMessage = String.format(
@@ -102,32 +112,32 @@ public class BotApplication extends TelegramLongPollingBot {
                                 чтобы продолжить работу нужно залогиниться
                                 """
                 );
-                sendText(chatId, helloMessage);
-                sendText(chatId, "введи свой логин от ЮК");
-                user.setRegistrationStatus(RegistrationStatus.LOGIN);
+                messageService.sendText(chatId, helloMessage);
+                messageService.sendText(chatId, "введи свой логин от ЮК");
+                user.getSteps().setRegistrationStatus(RegistrationStatus.LOGIN);
                 userService.updateUser(user);
             }
             case LOGIN -> {
-                sendText(chatId, "кул, теперь пароль");
+                messageService.sendText(chatId, "кул, теперь пароль");
                 user.setLogin(messageText);
-                user.setRegistrationStatus(RegistrationStatus.PASSWORD);
+                user.getSteps().setRegistrationStatus(RegistrationStatus.PASSWORD);
                 userService.updateUser(user);
             }
             case PASSWORD -> {
                 user.setPassword(messageText);
                 if (!YCUserService.authorization(user)) {
-                    sendText(chatId, """
+                    messageService.sendText(chatId, """
                             кажется, ты где-то ошибся
                             или может тебя уволили?
                             попробуем снова
                             """);
-                    user.setRegistrationStatus(RegistrationStatus.START);
+                    user.getSteps().setRegistrationStatus(RegistrationStatus.START);
                     registration(user, update);
                     return;
                 }
-                user.setRegistrationStatus(RegistrationStatus.DONE);
+                user.getSteps().setRegistrationStatus(RegistrationStatus.DONE);
                 userService.updateUser(user);
-                sendText(chatId, "велкам!");
+                messageService.sendText(chatId, "велкам!");
                 onUpdateReceived(update);
             }
         }
@@ -169,24 +179,12 @@ public class BotApplication extends TelegramLongPollingBot {
         switch (date) {
             case YESTERDAY -> sendReport(chatId, userId, LocalDate.now().minusDays(1));
             case TODAY -> sendReport(chatId, userId, LocalDate.now());
-            case CUSTOM_DATE -> sendText(chatId, INPUT_DATE_MESSAGE);
+            case CUSTOM_DATE -> messageService.sendText(chatId, INPUT_DATE_MESSAGE);
             default -> sendInlineKeyboard(chatId);
         }
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
-        sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
-    }
-
-    private void sendText(long chatId, String text) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(text);
-
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+        messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
     }
 }
