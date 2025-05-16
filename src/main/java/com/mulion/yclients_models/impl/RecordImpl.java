@@ -39,11 +39,6 @@ public class RecordImpl implements Record {
         return String.format("%s - %s, %s", startTime, endTime, paymentInfo);
     }
 
-    @Override
-    public boolean isDone() {
-        return false;
-    }
-
     private String createPaymentInfo(List<PaymentTransactionRecord> transactionRecords) {
         if (transactionRecords == null) return "";
         if (transactionRecords.isEmpty()) return "бюджет";
