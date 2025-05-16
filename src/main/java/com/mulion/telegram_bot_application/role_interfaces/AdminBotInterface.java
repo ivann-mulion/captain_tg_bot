@@ -1,4 +1,4 @@
-package com.mulion.telegram_bot_application;
+package com.mulion.telegram_bot_application.role_interfaces;
 
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.User;

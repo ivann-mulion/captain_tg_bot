@@ -4,10 +4,12 @@ import com.mulion.constants.BotMassageTexts;
 import com.mulion.data_base.SessionProvider;
 import com.mulion.data_base.repository.UserRepository;
 import com.mulion.data_base.services.DBUserService;
-import com.mulion.enums.RegistrationStatus;
-import com.mulion.enums.UserRole;
+import com.mulion.models.enums.UserRegistrationStatus;
+import com.mulion.models.enums.UserRole;
 import com.mulion.models.User;
 import com.mulion.services.ConfigService;
+import com.mulion.telegram_bot_application.role_interfaces.AdminBotInterface;
+import com.mulion.telegram_bot_application.role_interfaces.CaptainBotInterface;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCUserService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -63,17 +65,17 @@ public class BotApplication extends TelegramLongPollingBot {
         switch (role) {
             case ADMIN -> adminInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
-
         }
     }
 
     private boolean checkUser(Update update, User user, long userId) {
         if (user == null) {
             user = userService.addUser(userId, update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName());
+            messageService.sendText(update.getMessage().getChatId(), BotMassageTexts.REGISTRATION_GREETENG);
             registration(user, update);
             return false;
         }
-        if (user.getSteps().getRegistrationStatus() != RegistrationStatus.DONE) {
+        if (user.getSteps().getRegistrationStatus() != UserRegistrationStatus.DONE) {
             registration(user, update);
             return false;
         }
@@ -83,41 +85,30 @@ public class BotApplication extends TelegramLongPollingBot {
     private void registration(User user, Update update) {
         long chatId = update.getMessage().getChatId();
         String messageText = update.getMessage().getText();
-        RegistrationStatus status = user.getSteps().getRegistrationStatus();
+        UserRegistrationStatus status = user.getSteps().getRegistrationStatus();
         switch (status) {
             case START -> {
-                String helloMessage = String.format(
-                        """
-                                ола, капитан
-                                чтобы продолжить работу нужно залогиниться
-                                """
-                );
-                messageService.sendText(chatId, helloMessage);
-                messageService.sendText(chatId, "введи свой логин от ЮК");
-                user.getSteps().setRegistrationStatus(RegistrationStatus.LOGIN);
+                messageService.sendText(chatId, BotMassageTexts.REGISTRATION_LOGIN);
+                user.getSteps().setRegistrationStatus(UserRegistrationStatus.LOGIN);
                 userService.updateUser(user);
             }
             case LOGIN -> {
-                messageService.sendText(chatId, "кул, теперь пароль");
+                messageService.sendText(chatId, BotMassageTexts.REGISTRATION_PASSWORD);
                 user.setLogin(messageText);
-                user.getSteps().setRegistrationStatus(RegistrationStatus.PASSWORD);
+                user.getSteps().setRegistrationStatus(UserRegistrationStatus.PASSWORD);
                 userService.updateUser(user);
             }
             case PASSWORD -> {
                 user.setPassword(messageText);
                 if (!YCUserService.authorization(user)) {
-                    messageService.sendText(chatId, """
-                            кажется, ты где-то ошибся
-                            или может тебя уволили?
-                            попробуем снова
-                            """);
-                    user.getSteps().setRegistrationStatus(RegistrationStatus.START);
+                    messageService.sendText(chatId, BotMassageTexts.REGISTRATION_ERROR);
+                    user.getSteps().setRegistrationStatus(UserRegistrationStatus.START);
                     registration(user, update);
                     return;
                 }
-                user.getSteps().setRegistrationStatus(RegistrationStatus.DONE);
+                user.getSteps().setRegistrationStatus(UserRegistrationStatus.DONE);
                 userService.updateUser(user);
-                messageService.sendText(chatId, "велкам!");
+                messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
             }
         }

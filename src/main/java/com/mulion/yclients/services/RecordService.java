@@ -1,12 +1,12 @@
-package com.mulion.services;
+package com.mulion.yclients.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mulion.constants.HttpStatusCodes;
 import com.mulion.models.User;
-import com.mulion.yclients.models.Record;
-import com.mulion.yclients.models.impl.RecordImpl;
+import com.mulion.models.Record;
+import com.mulion.models.impl.RecordImpl;
 import com.mulion.yclients.models.responses.DataRecord;
 import com.mulion.yclients.models.responses.PaymentTransactionRecord;
 

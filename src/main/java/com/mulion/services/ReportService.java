@@ -2,9 +2,10 @@ package com.mulion.services;
 
 import com.mulion.constants.ErrorsMessages;
 import com.mulion.models.User;
-import com.mulion.yclients.models.Record;
+import com.mulion.models.Record;
 import com.mulion.models.Report;
 import com.mulion.models.impl.ReportImpl;
+import com.mulion.yclients.services.RecordService;
 import com.mulion.yclients.services.YCUserService;
 
 import javax.naming.AuthenticationException;

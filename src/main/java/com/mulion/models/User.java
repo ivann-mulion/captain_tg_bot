@@ -1,7 +1,7 @@
 package com.mulion.models;
 
 import com.mulion.data_base.listeners.UserListener;
-import com.mulion.enums.UserRole;
+import com.mulion.models.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;

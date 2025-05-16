@@ -1,6 +1,6 @@
 package com.mulion.models;
 
-import com.mulion.enums.RegistrationStatus;
+import com.mulion.models.enums.UserRegistrationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.Data;
@@ -9,9 +9,9 @@ import lombok.Data;
 @Embeddable
 public class Steps {
     @Column(name = "registration_status")
-    private RegistrationStatus registrationStatus;
+    private UserRegistrationStatus registrationStatus;
 
     public Steps() {
-        registrationStatus = RegistrationStatus.START;
+        registrationStatus = UserRegistrationStatus.START;
     }
 }

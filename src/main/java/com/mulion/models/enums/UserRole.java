@@ -1,4 +1,4 @@
-package com.mulion.enums;
+package com.mulion.models.enums;
 
 public enum UserRole {
     CAPTAIN,

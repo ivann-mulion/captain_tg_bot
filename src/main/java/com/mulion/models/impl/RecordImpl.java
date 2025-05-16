@@ -1,6 +1,6 @@
-package com.mulion.yclients.models.impl;
+package com.mulion.models.impl;
 
-import com.mulion.yclients.models.Record;
+import com.mulion.models.Record;
 import com.mulion.yclients.models.responses.DataRecord;
 import com.mulion.yclients.models.responses.PaymentTransactionRecord;
 import lombok.Data;

@@ -1,7 +1,7 @@
 package com.mulion.data_base.services;
 
 import com.mulion.data_base.repository.Repository;
-import com.mulion.enums.UserRole;
+import com.mulion.models.enums.UserRole;
 import com.mulion.models.Steps;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
