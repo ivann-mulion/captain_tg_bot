@@ -1,6 +1,6 @@
 package com.mulion.telegram_bot_application;
 
-import com.mulion.enums.Date;
+import com.mulion.telegram_bot_application.enums.Date;
 import com.mulion.services.ConfigService;
 import com.mulion.services.ReportService;
 import com.mulion.services.UserService;

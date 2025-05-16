@@ -1,6 +1,6 @@
 package com.mulion.models.impl;
 
-import com.mulion.models.Record;
+import com.mulion.yclients_models.Record;
 import com.mulion.models.Report;
 import com.mulion.models.User;
 import lombok.Data;

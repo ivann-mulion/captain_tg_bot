@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mulion.constants.HttpStatusCodes;
-import com.mulion.models.Record;
+import com.mulion.yclients_models.Record;
 import com.mulion.models.User;
-import com.mulion.models.impl.RecordImpl;
-import com.mulion.models.responces.DataRecord;
-import com.mulion.models.responces.PaymentTransactionRecord;
+import com.mulion.yclients_models.impl.RecordImpl;
+import com.mulion.yclients_models.responses.DataRecord;
+import com.mulion.yclients_models.responses.PaymentTransactionRecord;
 
 import javax.naming.AuthenticationException;
 import java.io.IOException;

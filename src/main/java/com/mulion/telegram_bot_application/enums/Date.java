@@ -1,4 +1,4 @@
-package com.mulion.enums;
+package com.mulion.telegram_bot_application.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

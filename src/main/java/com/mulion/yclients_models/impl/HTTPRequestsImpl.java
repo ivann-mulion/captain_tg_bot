@@ -1,9 +1,9 @@
-package com.mulion.models.impl;
+package com.mulion.yclients_models.impl;
 
 import com.mulion.constants.Config;
-import com.mulion.models.HTTPRequests;
+import com.mulion.yclients_models.HTTPRequests;
 import com.mulion.models.User;
-import com.mulion.models.responces.DataRecord;
+import com.mulion.yclients_models.responses.DataRecord;
 
 import java.net.URI;
 import java.net.http.HttpRequest;

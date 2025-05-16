@@ -1,7 +1,7 @@
 package com.mulion.constants;
 
-import com.mulion.models.HTTPRequests;
-import com.mulion.models.impl.HTTPRequestsImpl;
+import com.mulion.yclients_models.HTTPRequests;
+import com.mulion.yclients_models.impl.HTTPRequestsImpl;
 import com.mulion.services.ConfigService;
 
 import java.net.http.HttpClient;

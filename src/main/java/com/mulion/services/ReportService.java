@@ -1,7 +1,7 @@
 package com.mulion.services;
 
 import com.mulion.constants.ErrorsMessages;
-import com.mulion.models.Record;
+import com.mulion.yclients_models.Record;
 import com.mulion.models.Report;
 import com.mulion.models.User;
 import com.mulion.models.impl.ReportImpl;
