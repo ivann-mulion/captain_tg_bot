@@ -1,8 +1,8 @@
-package com.mulion.yclients_models.models.impl;
+package com.mulion.yclients.models.impl;
 
-import com.mulion.yclients_models.models.Record;
-import com.mulion.yclients_models.models.responses.DataRecord;
-import com.mulion.yclients_models.models.responses.PaymentTransactionRecord;
+import com.mulion.yclients.models.Record;
+import com.mulion.yclients.models.responses.DataRecord;
+import com.mulion.yclients.models.responses.PaymentTransactionRecord;
 import lombok.Data;
 
 import java.time.LocalDate;

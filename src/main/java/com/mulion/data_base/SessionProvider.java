@@ -15,7 +15,7 @@ public class SessionProvider {
         hibernateProperties.setProperty("hibernate.connection.url", ConfigService.getProperty("db.connection_url"));
         hibernateProperties.setProperty("hibernate.connection.username", ConfigService.getProperty("db.user_name"));
         hibernateProperties.setProperty("hibernate.connection.password", ConfigService.getProperty("db.password"));
-        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "create-drop");
+        hibernateProperties.setProperty("hibernate.hbm2ddl.auto", "update");
         hibernateProperties.setProperty("hibernate.show_sql", "true");
 
         return new Configuration()

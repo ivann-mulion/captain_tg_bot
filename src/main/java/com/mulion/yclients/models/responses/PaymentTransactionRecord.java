@@ -1,4 +1,4 @@
-package com.mulion.yclients_models.models.responses;
+package com.mulion.yclients.models.responses;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

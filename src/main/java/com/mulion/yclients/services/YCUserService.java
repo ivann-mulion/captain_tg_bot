@@ -1,4 +1,4 @@
-package com.mulion.yclients_models.services;
+package com.mulion.yclients.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
