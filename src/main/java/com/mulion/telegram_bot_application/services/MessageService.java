@@ -21,4 +21,12 @@ public class MessageService extends DefaultAbsSender {
             e.printStackTrace();
         }
     }
+
+    public void sendMessage(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
 }
