@@ -56,6 +56,8 @@ public class User {
             }
     )
     private final List<Boat> boats = new ArrayList<>();
+    @Column(name = "staff_id")
+    private Long staffId;
     private String login;
     private String password;
     private int cash;

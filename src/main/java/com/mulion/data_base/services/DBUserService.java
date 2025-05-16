@@ -1,7 +1,8 @@
 package com.mulion.data_base.services;
 
 import com.mulion.data_base.repository.Repository;
-import com.mulion.enums.RegistrationStatus;
+import com.mulion.enums.UserRole;
+import com.mulion.models.Steps;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
 
@@ -18,7 +19,8 @@ public class DBUserService {
                 .id(userId)
                 .tgUserName(tgUserName)
                 .name(name)
-                .registrationStatus(RegistrationStatus.START)
+                .steps(new Steps())
+                .role(UserRole.CAPTAIN)
                 .build();
         repository.create(user);
         return user;
