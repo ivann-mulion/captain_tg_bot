@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class Config {
+    public static final String PATH_TO_PROPERTIES = "./src/main/resources/config.properties";
     public static final String BASE_URL = ConfigService.getProperty("yc.base_url");
     public static final String PARTNER_TOKEN = ConfigService.getProperty("yc.partner_token");
     public static final long COMPANY_ID = Long.parseLong(ConfigService.getProperty("yc.company_id"));

@@ -13,22 +13,20 @@ import java.util.List;
 
 public class ReportService {
     public static Report getReport(User user, LocalDate date) {
-        List<Record> records;
-        try {
-            records = RecordService.getRecords(user, date);
-        } catch (AuthenticationException _) {
-            try {
-                UserService.authorization(user);
-            } catch (FailedLoginException _) {
-                return null;
-            }
-            try {
-                records = RecordService.getRecords(user, date);
-            } catch (AuthenticationException _) {
-                return null;
-            }
+        List<Record> records = tryGetRecords(user, date);
+        if (records != null) {
+            return new ReportImpl(user, date, records);
         }
-        return new ReportImpl(user, date, records);
+
+        if (!authorize(user)) {
+            return null;
+        }
+
+        records = tryGetRecords(user, date);
+        if (records != null) {
+            return new ReportImpl(user, date, records);
+        }
+        return null;
     }
 
     public static String getReportMessage(User user, LocalDate date) {
@@ -37,6 +35,25 @@ public class ReportService {
             return ErrorsMessages.AUTH_ERROR;
         }
         return report.getReportMessage();
+    }
+
+    private static List<Record> tryGetRecords(User user, LocalDate date) {
+        List<Record> records;
+        try {
+            records = RecordService.getRecords(user, date);
+        } catch (AuthenticationException _) {
+            return null;
+        }
+        return records;
+    }
+
+    private static boolean authorize(User user) {
+        try {
+            UserService.authorization(user);
+        } catch (FailedLoginException _) {
+            return false;
+        }
+        return true;
     }
 
     private ReportService() {
