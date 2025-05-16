@@ -1,7 +1,6 @@
 package com.mulion.models;
 
 import com.mulion.enums.RegistrationStatus;
-import com.mulion.services.ConfigService;
 import com.mulion.yclients_models.services.YCUserService;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -5,8 +5,6 @@ import com.mulion.enums.RegistrationStatus;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Optional;
-
 @RequiredArgsConstructor
 public class DBUserService {
     private final Repository<User, Long> repository;

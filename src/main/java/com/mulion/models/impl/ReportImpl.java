@@ -3,7 +3,6 @@ package com.mulion.models.impl;
 import com.mulion.models.User;
 import com.mulion.yclients_models.models.Record;
 import com.mulion.models.Report;
-import com.mulion.models.User;
 import lombok.Data;
 
 import java.time.LocalDate;
