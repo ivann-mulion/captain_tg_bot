@@ -26,6 +26,7 @@ public class CaptainBotInterface {
     public void onUpdateReceived(User user, Update update) {
         if (update.hasCallbackQuery()) {
             handleCallback(update.getCallbackQuery());
+            sendInlineKeyboard(update.getMessage().getChatId());
             return;
         }
 
@@ -36,7 +37,6 @@ public class CaptainBotInterface {
             try {
                 LocalDate date = LocalDate.parse(messageText, Config.reportDateFormatter);
                 sendReport(chatId, user.getId(), date);
-                return;
             } catch (RuntimeException e) {
                 e.printStackTrace();
             }

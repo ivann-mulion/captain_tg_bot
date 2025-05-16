@@ -27,6 +27,22 @@ public class BotApplication extends TelegramLongPollingBot {
     private final AdminBotInterface adminInterface;
     private final CaptainBotInterface captainInterface;
 
+    @Override
+    public void onUpdateReceived(Update update) {
+        Long userId = getUserId(update);
+        if (userId == null) return;
+
+        User user = userService.getUser(userId);
+
+        if (!checkUser(update, user, userId)) return;
+
+        UserRole role = user.getRole();
+        switch (role) {
+            case ADMIN -> adminInterface.onUpdateReceived(user, update);
+            default -> captainInterface.onUpdateReceived(user, update);
+        }
+    }
+
     public BotApplication(String token) {
         super(token);
         userService = new DBUserService(new UserRepository(new SessionProvider().getSessionFactory()));
@@ -50,22 +66,17 @@ public class BotApplication extends TelegramLongPollingBot {
         return ConfigService.getProperty(BOT_USER_NAME);
     }
 
-    @Override
-    public void onUpdateReceived(Update update) {
-        if (!(update.hasMessage() && update.getMessage().hasText() || update.hasCallbackQuery())) {
-            return;
+    private static Long getUserId(Update update) {
+        long userId;
+        if (!(update.hasMessage() && update.getMessage().hasText())) {
+            if (!update.hasCallbackQuery()) {
+                return null;
+            }
+            userId = update.getCallbackQuery().getFrom().getId();
+        } else {
+            userId = update.getMessage().getFrom().getId();
         }
-
-        long userId = update.getMessage().getFrom().getId();
-        User user = userService.getUser(userId);
-
-        if (!checkUser(update, user, userId)) return;
-
-        UserRole role = user.getRole();
-        switch (role) {
-            case ADMIN -> adminInterface.onUpdateReceived(user, update);
-            default -> captainInterface.onUpdateReceived(user, update);
-        }
+        return userId;
     }
 
     private boolean checkUser(Update update, User user, long userId) {

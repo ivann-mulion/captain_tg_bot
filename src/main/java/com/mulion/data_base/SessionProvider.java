@@ -1,5 +1,6 @@
 package com.mulion.data_base;
 
+import com.mulion.models.Boat;
 import com.mulion.models.User;
 import com.mulion.services.ConfigService;
 import org.hibernate.SessionFactory;
@@ -21,6 +22,7 @@ public class SessionProvider {
         return new Configuration()
                 .addProperties(hibernateProperties)
                 .addAnnotatedClass(User.class)
+                .addAnnotatedClass(Boat.class)
                 .buildSessionFactory();
     }
 }
