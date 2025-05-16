@@ -14,7 +14,7 @@ public class ConfigService {
     private ConfigService() {
         properties = new Properties();
 
-        try (InputStream input = new FileInputStream(Config.PATH_TO_PROPERTIES)) {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(Config.PATH_TO_PROPERTIES)) {
             properties.load(input);
         } catch (IOException e) {
             System.out.println(e.getMessage());

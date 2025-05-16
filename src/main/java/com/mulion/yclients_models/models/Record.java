@@ -1,4 +1,4 @@
-package com.mulion.yclients_models;
+package com.mulion.yclients_models.models;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

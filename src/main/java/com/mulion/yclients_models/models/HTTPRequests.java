@@ -1,7 +1,7 @@
-package com.mulion.yclients_models;
+package com.mulion.yclients_models.models;
 
 import com.mulion.models.User;
-import com.mulion.yclients_models.responses.DataRecord;
+import com.mulion.yclients_models.models.responses.DataRecord;
 
 import java.net.http.HttpRequest;
 import java.time.LocalDate;

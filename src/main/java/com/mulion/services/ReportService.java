@@ -1,13 +1,13 @@
 package com.mulion.services;
 
 import com.mulion.constants.ErrorsMessages;
-import com.mulion.yclients_models.Record;
-import com.mulion.models.Report;
 import com.mulion.models.User;
+import com.mulion.yclients_models.models.Record;
+import com.mulion.models.Report;
 import com.mulion.models.impl.ReportImpl;
+import com.mulion.yclients_models.services.YCUserService;
 
 import javax.naming.AuthenticationException;
-import javax.security.auth.login.FailedLoginException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -18,7 +18,7 @@ public class ReportService {
             return new ReportImpl(user, date, records);
         }
 
-        if (!authorize(user)) {
+        if (!YCUserService.authorization(user)) {
             return null;
         }
 
@@ -41,19 +41,10 @@ public class ReportService {
         List<Record> records;
         try {
             records = RecordService.getRecords(user, date);
-        } catch (AuthenticationException _) {
+        } catch (AuthenticationException e) {
             return null;
         }
         return records;
-    }
-
-    private static boolean authorize(User user) {
-        try {
-            UserService.authorization(user);
-        } catch (FailedLoginException _) {
-            return false;
-        }
-        return true;
     }
 
     private ReportService() {

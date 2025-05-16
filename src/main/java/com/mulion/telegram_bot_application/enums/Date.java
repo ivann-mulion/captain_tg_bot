@@ -16,7 +16,7 @@ public enum Date {
     public static Date getDateFromString(String string) {
         try {
             return valueOf(string.toUpperCase());
-        } catch (IllegalArgumentException _) {
+        } catch (IllegalArgumentException e) {
             return NOT_DATE;
         }
     }

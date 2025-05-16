@@ -1,8 +1,8 @@
-package com.mulion.yclients_models.impl;
+package com.mulion.yclients_models.models.impl;
 
-import com.mulion.yclients_models.Record;
-import com.mulion.yclients_models.responses.DataRecord;
-import com.mulion.yclients_models.responses.PaymentTransactionRecord;
+import com.mulion.yclients_models.models.Record;
+import com.mulion.yclients_models.models.responses.DataRecord;
+import com.mulion.yclients_models.models.responses.PaymentTransactionRecord;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -46,10 +46,10 @@ public class RecordImpl implements Record {
         String pre = "пред : ";
         String boat = "борт : ";
         String aq = "экв  : ";
-        if (!transactionRecords.getFirst().getAccount().isCash() && transactionRecords.size() != 1) {
-            paymants.put(pre, transactionRecords.getFirst().getAmount());
-            prepayment += transactionRecords.getFirst().getAmount();
-            transactionRecords.removeFirst();
+        if (!transactionRecords.get(0).getAccount().isCash() && transactionRecords.size() != 1) {
+            paymants.put(pre, transactionRecords.get(0).getAmount());
+            prepayment += transactionRecords.get(0).getAmount();
+            transactionRecords.remove(0);
         }
         for (PaymentTransactionRecord transaction : transactionRecords) {
             if (transaction.getAccount().isCash()) {

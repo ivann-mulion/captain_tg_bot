@@ -1,6 +1,7 @@
 package com.mulion.models.impl;
 
-import com.mulion.yclients_models.Record;
+import com.mulion.models.User;
+import com.mulion.yclients_models.models.Record;
 import com.mulion.models.Report;
 import com.mulion.models.User;
 import lombok.Data;
@@ -50,7 +51,7 @@ public class ReportImpl implements Report {
         StringBuilder result = new StringBuilder();
         result.append(date.format(reportDateFormatter))
                 .append(String.format(" (%s)%n%s%n",
-                        date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.of("ru")),
+                        date.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("ru")),
                         DELIMITER));
         records.forEach(re -> result.append(re).append('\n'));
         result.append(String.format("""
@@ -62,10 +63,6 @@ public class ReportImpl implements Report {
         result.append(DELIMITER)
                 .append("\nчасов отработано : ")
                 .append(workHours);
-        result.append('\n')
-                .append(DELIMITER)
-                .append('\n')
-                .append(String.format("total : %s", formatWithUnderscores(prepayment + acquiring + cash)));
         return result.toString();
     }
 

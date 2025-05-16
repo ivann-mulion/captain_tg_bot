@@ -1,14 +1,20 @@
 package com.mulion.telegram_bot_application;
 
+import com.mulion.data_base.SessionProvider;
+import com.mulion.data_base.repository.UserRepository;
+import com.mulion.data_base.services.DBUserService;
+import com.mulion.enums.RegistrationStatus;
+import com.mulion.models.User;
 import com.mulion.telegram_bot_application.enums.Date;
 import com.mulion.services.ConfigService;
 import com.mulion.services.ReportService;
-import com.mulion.services.UserService;
 import com.mulion.constants.Config;
+import com.mulion.yclients_models.services.YCUserService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.ChatMemberUpdated;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -25,6 +31,8 @@ public class BotApplication extends TelegramLongPollingBot {
     public static final String TOKEN = "tg.token";
     public static final String BOT_USER_NAME = "tg.bot_user_name";
     public static final String CHOOSE_DATE_MESSAGE = "Выберите дату отчета:";
+
+    private final DBUserService userService = new DBUserService(new UserRepository(new SessionProvider().getSessionFactory()));
 
     public BotApplication() {
         super(ConfigService.getProperty(TOKEN));
@@ -55,11 +63,22 @@ public class BotApplication extends TelegramLongPollingBot {
             return;
         }
 
+        long userId = update.getMessage().getFrom().getId();
+        User user = userService.getUser(userId);
+        if (user == null) {
+            user = userService.addUser(userId, update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName());
+            registration(user, update);
+            return;
+        }
+        if (user.getRegistrationStatus() != RegistrationStatus.DONE) {
+            registration(user, update);
+            return;
+        }
+
         String messageText = update.getMessage().getText();
         long chatId = update.getMessage().getChatId();
 
         if (messageText.matches("\\d{2}.\\d{2}.\\d{4}")) {
-            long userId = update.getMessage().getFrom().getId();
             try {
                 LocalDate date = LocalDate.parse(messageText, Config.reportDateFormatter);
                 sendReport(chatId, userId, date);
@@ -70,6 +89,50 @@ public class BotApplication extends TelegramLongPollingBot {
         }
 
         sendInlineKeyboard(chatId);
+    }
+
+    private void registration(User user, Update update) {
+        long chatId = update.getMessage().getChatId();
+        String messageText = update.getMessage().getText();
+        RegistrationStatus status = user.getRegistrationStatus();
+        switch (status) {
+            case START -> {
+                String helloMessage = String.format(
+                        """
+                                ола, капитан
+                                чтобы продолжить работу нужно залогиниться
+                                """
+                );
+                sendText(chatId, helloMessage);
+                sendText(chatId, "введи свой логин от ЮК");
+                user.setRegistrationStatus(RegistrationStatus.LOGIN);
+                userService.updateUser(user);
+            }
+            case LOGIN -> {
+                sendText(chatId, "кул, теперь пароль");
+                user.setLogin(messageText);
+                user.setRegistrationStatus(RegistrationStatus.PASSWORD);
+                userService.updateUser(user);
+            }
+            case PASSWORD -> {
+                user.setPassword(messageText);
+                if (!YCUserService.authorization(user)) {
+                    sendText(chatId, """
+                            кажется, ты где-то ошибся
+                            или может тебя уволили?
+                            попробуем снова
+                            """);
+                    user.setRegistrationStatus(RegistrationStatus.START);
+                    registration(user, update);
+                    return;
+                }
+                user.setRegistrationStatus(RegistrationStatus.DONE);
+                userService.updateUser(user);
+                sendText(chatId, "велкам!");
+                onUpdateReceived(update);
+            }
+        }
+        System.out.println(user);
     }
 
     private void sendInlineKeyboard(long chatId) {
@@ -113,7 +176,7 @@ public class BotApplication extends TelegramLongPollingBot {
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
-        sendText(chatId, ReportService.getReportMessage(UserService.getUser(userId), date));
+        sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
     }
 
     private void sendText(long chatId, String text) {

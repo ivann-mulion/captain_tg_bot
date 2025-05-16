@@ -11,13 +11,13 @@ repositories {
 }
 
 application {
-    mainClass = 'com.nemchinov.bot.BotApplication'
+    mainClass = 'com.mulion.telegram_bot_application.BotApplication'
 }
 
 jar {
     manifest {
         attributes(
-                'Main-Class': 'com.mulion.bot.BotApplication'
+                'Main-Class': 'com.mulion.telegram_bot_application.BotApplication'
         )
     }
     from {
@@ -27,6 +27,11 @@ jar {
 }
 
 dependencies {
+    implementation("org.hibernate.orm:hibernate-core:6.6.13.Final")
+    annotationProcessor("org.hibernate.orm:hibernate-core:6.6.13.Final")
+
+    implementation("org.postgresql:postgresql:42.7.5")
+
     implementation('org.telegram:telegrambots:6.9.7.1')
     implementation("org.glassfish.jersey.containers:jersey-container-grizzly2-http:3.1.10")
     implementation("commons-codec:commons-codec:1.18.0")
