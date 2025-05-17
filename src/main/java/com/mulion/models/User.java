@@ -64,7 +64,7 @@ public class User {
     private String password;
     private int cash;
     @Embedded
-    private Steps steps;
+    private Step step;
 
     public String getLoginAndPassword() {
         return new ToStringBuilder(this, ToStringStyle.JSON_STYLE)

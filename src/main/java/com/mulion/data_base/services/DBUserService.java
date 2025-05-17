@@ -2,7 +2,7 @@ package com.mulion.data_base.services;
 
 import com.mulion.data_base.repository.Repository;
 import com.mulion.models.enums.UserRole;
-import com.mulion.models.Steps;
+import com.mulion.models.Step;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
@@ -36,7 +36,7 @@ public class DBUserService {
                 .tgUserName(tgUserName)
                 .chatId(chatId)
                 .name(name)
-                .steps(new Steps())
+                .step(new Step())
                 .role(UserRole.CAPTAIN)
                 .build();
         repository.create(user);

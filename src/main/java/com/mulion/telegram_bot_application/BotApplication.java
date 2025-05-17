@@ -39,7 +39,7 @@ public class BotApplication extends TelegramLongPollingBot {
 
         if (!checkUser(update, user, userId)) return;
 
-        UserRole role = user.getRole();
+        UserRole role = user.getStep().getAction().getAccess();
         switch (role) {
             case ADMIN -> adminInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
@@ -97,7 +97,7 @@ public class BotApplication extends TelegramLongPollingBot {
             registration(user, update);
             return false;
         }
-        if (user.getSteps().getAction() == Action.REGISTRATION) {
+        if (user.getStep().getAction() == Action.REGISTRATION) {
             registration(user, update);
             return false;
         }
@@ -110,7 +110,7 @@ public class BotApplication extends TelegramLongPollingBot {
     private void registration(User user, Update update) {
         long chatId = update.getMessage().getChatId();
         String messageText = update.getMessage().getText();
-        int step = user.getSteps().nextStep();
+        int step = user.getStep().nextStep();
         switch (step) {
             case 0 -> {
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_LOGIN);
@@ -125,11 +125,11 @@ public class BotApplication extends TelegramLongPollingBot {
                 user.setPassword(messageText);
                 if (!YCUserService.authorization(user)) {
                     messageService.sendText(chatId, BotMassageTexts.REGISTRATION_ERROR);
-                    user.getSteps().restartAction();
+                    user.getStep().restartAction();
                     registration(user, update);
                     return;
                 }
-                user.getSteps().inactivate();
+                user.getStep().inactivate();
                 userService.updateUser(user);
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
