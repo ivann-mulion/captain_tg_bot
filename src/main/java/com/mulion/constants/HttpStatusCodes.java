@@ -6,4 +6,5 @@ import lombok.experimental.UtilityClass;
 public class HttpStatusCodes {
     public static final int OK = 201;
     public static final int UNAUTHORIZED = 401;
+    public static final int NOT_FOUND = 404;
 }

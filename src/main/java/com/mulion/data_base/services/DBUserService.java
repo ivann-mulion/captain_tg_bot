@@ -1,8 +1,9 @@
 package com.mulion.data_base.services;
 
 import com.mulion.data_base.repository.Repository;
+import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
-import com.mulion.models.Step;
+import com.mulion.models.ActionSteps;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
@@ -36,7 +37,7 @@ public class DBUserService {
                 .tgUserName(tgUserName)
                 .chatId(chatId)
                 .name(name)
-                .step(new Step())
+                .actionStep(new ActionSteps())
                 .role(UserRole.CAPTAIN)
                 .build();
         repository.create(user);
@@ -45,5 +46,26 @@ public class DBUserService {
 
     public void updateUser(User user) {
         repository.update(user);
+    }
+
+    public int nextStep(User user) {
+        int step = user.getActionStep().nextStep();
+        updateUser(user);
+        return step;
+    }
+
+    public void setAction(User user, Action action) {
+        user.getActionStep().setAction(action);
+        updateUser(user);
+    }
+
+    public void restartAction(User user) {
+        user.getActionStep().restartAction();
+        updateUser(user);
+    }
+
+    public void inactive(User user) {
+        user.getActionStep().inactivate();
+        updateUser(user);
     }
 }

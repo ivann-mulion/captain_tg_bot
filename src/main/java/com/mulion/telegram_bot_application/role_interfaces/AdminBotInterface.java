@@ -1,11 +1,15 @@
 package com.mulion.telegram_bot_application.role_interfaces;
 
+import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
+import com.mulion.models.Boat;
 import com.mulion.models.User;
+import com.mulion.models.enums.Action;
+import com.mulion.models.enums.UserRole;
 import com.mulion.telegram_bot_application.services.MessageService;
-import lombok.RequiredArgsConstructor;
+import com.mulion.yclients.services.YCBoatService;
+import lombok.Getter;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -13,37 +17,153 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
-@RequiredArgsConstructor
 public class AdminBotInterface {
     public static final String ADD_BOAT_TO_CAPTAIN = "add_boat_to_captain";
     public static final String ADD_BOAT_IN_SYSTEM = "add_boat_in_system";
+    public static final String BACK = "back";
     private final MessageService messageService;
     private final DBUserService userService;
+    private final DBBoatService boatService;
+    @Getter
+    private final CaptainBotInterface captainInterface;
+    private User userBuffer;
+    private Boat.BoatBuilder boatBuilder;
+
+    public AdminBotInterface(MessageService messageService, DBUserService userService, DBBoatService boatService) {
+        this.messageService = messageService;
+        this.userService = userService;
+        this.boatService = boatService;
+        this.captainInterface = new CaptainBotInterface(messageService, userService, this);
+    }
 
     public void onUpdateReceived(User user, Update update) {
-        if (update.hasCallbackQuery()) {
-            handleCallback(update.getCallbackQuery());
+        if (!checkUserAccess(user)) {
             return;
         }
-        sendInlineKeyboard(update.getMessage().getChatId(), getMenuInlineButtons());
-    }
 
-    private void handleCallback(CallbackQuery callbackQuery) {
-        String data = callbackQuery.getData();
-        long chatId = callbackQuery.getMessage().getChatId();
-        long userId = callbackQuery.getFrom().getId();
+        Action action = user.getActionStep().getAction();
 
-        switch (data) {
-            case ADD_BOAT_TO_CAPTAIN -> sendInlineKeyboard(chatId, getAddBoatToCaptainInlineButtons());
-            case ADD_BOAT_IN_SYSTEM -> messageService.sendText(chatId, "добавить лодку в систему");
-            default -> sendInlineKeyboard(chatId, getMenuInlineButtons());
+        try {
+            switch (action) {
+                case ADD_BOAT -> addBoatInSystem(user, update);
+                case ADD_BOAT_TO_CAPTAIN -> addBoatToCaptain(user, update);
+                default -> adminMenu(user, update);
+            }
+        } catch (Exception e) {
+            sendMenu(user);
         }
     }
 
-    private void sendInlineKeyboard(long chatId, List<List<InlineKeyboardButton>> rows) {
+    private boolean checkUserAccess(User user) {
+        if (user.getRole() != UserRole.ADMIN) {
+            System.out.println("ALARM");
+            messageService.sendText(user.getChatId(), "wrf man u r not an admin");
+            userService.inactive(user);
+            return false;
+        }
+        return true;
+    }
+
+    private void addBoatInSystem(User user, Update update) {
+        int step = userService.nextStep(user);
+
+        if (step == 0) {
+            messageService.sendText(user.getChatId(), "введи staff_id яхты");
+            return;
+        }
+
+        String message = update.getMessage().getText();
+
+        switch (step) {
+            case 1 -> {
+                try {
+                    Long boatId = Long.valueOf(message);
+                    if (!YCBoatService.isBoat(boatId)) {
+                        throw new NumberFormatException();
+                    }
+                    boatBuilder = Boat.builder().id(boatId);
+                    messageService.sendText(user.getChatId(), "теперь давай имя яхты");
+                } catch (NumberFormatException e) {
+                    messageService.sendText(user.getChatId(), "некорректный staff_id, все по новой давай");
+                    sendMenu(user);
+                }
+            }
+            case 2 -> {
+                Boat boat = boatBuilder.name(message).build();
+                boatBuilder = null;
+                boat = boatService.addBoat(boat);
+                messageService.sendText(user.getChatId(), "успешно добавлена яхта" + boat);
+                sendMenu(user);
+            }
+        }
+    }
+
+    private void addBoatToCaptain(User user, Update update) {
+        int step = userService.nextStep(user);
+
+        if (step == 0) {
+            sendCaptains(user);
+            return;
+        }
+
+        long chatId = user.getChatId();
+
+        Long id = null;
+        try {
+            id = Long.valueOf(update.getCallbackQuery().getData());
+        } catch (NumberFormatException e) {
+            messageService.sendText(chatId, "id parsing error - " + id);
+        }
+
+        switch (step) {
+            case 1 -> {
+                userBuffer = userService.getUserWithBoats(id);
+                sendBoats(user);
+            }
+            case 2 -> {
+                Boat boat = boatService.getBoatWithUsers(id);
+                userBuffer.addBoat(boat);
+                userService.updateUser(userBuffer);
+                messageService.sendText(chatId, "пользователю " + userBuffer + " успешно добавлена яхта " + boat);
+                userBuffer = null;
+                sendMenu(user);
+            }
+        }
+    }
+
+    public void sendMenu(User user) {
+        sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
+        userService.setAction(user, Action.MENU);
+    }
+
+    private void sendCaptains(User user) {
+        sendInlineKeyboard(user, getUsersInlineButtons(), "choose captain");
+    }
+
+    private void sendBoats(User user) {
+        sendInlineKeyboard(user, getBoatsInlineButtons(), "choose boat");
+    }
+
+    public void adminMenu(User user, Update update) {
+        String point = update.getCallbackQuery().getData();
+
+        switch (point) {
+            case ADD_BOAT_IN_SYSTEM -> {
+                userService.setAction(user, Action.ADD_BOAT);
+                addBoatInSystem(user, update);
+            }
+            case ADD_BOAT_TO_CAPTAIN -> {
+                userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
+                addBoatToCaptain(user, update);
+            }
+            default -> captainInterface.sendMenu(user);
+        }
+    }
+
+    private void sendInlineKeyboard(User user, List<List<InlineKeyboardButton>> rows, String text) {
         SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("меню");
+        message.setChatId(String.valueOf(user.getChatId()));
+        message.setText(text);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
 
@@ -53,7 +173,7 @@ public class AdminBotInterface {
         messageService.sendMessage(message);
     }
 
-    private List<List<InlineKeyboardButton>> getAddBoatToCaptainInlineButtons() {
+    private List<List<InlineKeyboardButton>> getUsersInlineButtons() {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         List<User> users = userService.getUsers();
@@ -70,6 +190,23 @@ public class AdminBotInterface {
         return rows;
     }
 
+    private List<List<InlineKeyboardButton>> getBoatsInlineButtons() {
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        List<Boat> boats = boatService.getBoats();
+
+        for (Boat boat : boats) {
+            rows.add(List.of(
+                    InlineKeyboardButton.builder()
+                            .text(boat.getName())
+                            .callbackData(boat.getId().toString())
+                            .build()
+            ));
+        }
+
+        return rows;
+    }
+
     private List<List<InlineKeyboardButton>> getMenuInlineButtons() {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
@@ -78,6 +215,9 @@ public class AdminBotInterface {
         ));
         rows.add(List.of(
                 InlineKeyboardButton.builder().text("добавить яхту").callbackData(ADD_BOAT_IN_SYSTEM).build()
+        ));
+        rows.add(List.of(
+                InlineKeyboardButton.builder().text("назад").callbackData(BACK).build()
         ));
 
         return rows;

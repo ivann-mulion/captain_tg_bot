@@ -4,7 +4,6 @@ import com.mulion.constants.BotMassageTexts;
 import com.mulion.constants.Config;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.User;
-import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.services.ReportService;
 import com.mulion.telegram_bot_application.enums.DateMenu;
@@ -27,10 +26,6 @@ public class CaptainBotInterface {
     private final AdminBotInterface adminInterface;
 
     public void onUpdateReceived(User user, Update update) {
-        if (user.getStep().getAction().getAccess() != UserRole.CAPTAIN) {
-            adminInterface.onUpdateReceived(user, update);
-        }
-
         if (update.hasCallbackQuery()) {
             handleCallback(update.getCallbackQuery(), user);
             return;
@@ -48,12 +43,12 @@ public class CaptainBotInterface {
             }
         }
 
-        sendInlineKeyboard(user);
+        sendMenu(user);
     }
 
     private void handleCallback(CallbackQuery callbackQuery, User user) {
         String data = callbackQuery.getData();
-        DateMenu date = DateMenu.getDateFromString(data);
+        DateMenu date = DateMenu.valueOf(data);
         long chatId = callbackQuery.getMessage().getChatId();
         long userId = callbackQuery.getFrom().getId();
 
@@ -62,18 +57,19 @@ public class CaptainBotInterface {
             case TODAY -> sendReport(chatId, userId, LocalDate.now());
             case CUSTOM_DATE -> messageService.sendText(chatId, BotMassageTexts.INPUT_DATE_MESSAGE);
             case MENU -> {
-                adminInterface.sendAdminMenu(user);
-                user.getStep().setAction(Action.MENU);
+                adminInterface.sendMenu(user);
+                return;
             }
         }
-        sendInlineKeyboard(user);
+        sendMenu(user);
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
         messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
     }
 
-    private void sendInlineKeyboard(User user) {
+    public void sendMenu(User user) {
+        userService.inactive(user);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(user.getChatId()));
         message.setText(BotMassageTexts.CHOOSE_DATE_MESSAGE);
@@ -82,15 +78,15 @@ public class CaptainBotInterface {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("📆 вчера").callbackData(DateMenu.YESTERDAY.getAction()).build(),
-                InlineKeyboardButton.builder().text("📅 сегодня").callbackData(DateMenu.TODAY.getAction()).build()
+                InlineKeyboardButton.builder().text("📆 вчера").callbackData(DateMenu.YESTERDAY.toString()).build(),
+                InlineKeyboardButton.builder().text("📅 сегодня").callbackData(DateMenu.TODAY.toString()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("🗓 за дату").callbackData(DateMenu.CUSTOM_DATE.getAction()).build()
+                InlineKeyboardButton.builder().text("🗓 за дату").callbackData(DateMenu.CUSTOM_DATE.toString()).build()
         ));
         if (user.getRole() == UserRole.ADMIN) {
             rows.add(List.of(
-                    InlineKeyboardButton.builder().text("меню").callbackData(DateMenu.MENU.getAction()).build()
+                    InlineKeyboardButton.builder().text("меню").callbackData(DateMenu.MENU.toString()).build()
             ));
         }
 

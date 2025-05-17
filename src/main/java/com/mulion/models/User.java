@@ -21,9 +21,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -57,14 +57,14 @@ public class User {
                     @JoinColumn(name = "boat_id", referencedColumnName = "id")
             }
     )
-    private final List<Boat> boats = new ArrayList<>();
+    private final Set<Boat> boats = new HashSet<>();
     @Column(name = "staff_id")
     private Long staffId;
     private String login;
     private String password;
     private int cash;
     @Embedded
-    private Step step;
+    private ActionSteps actionStep;
 
     public String getLoginAndPassword() {
         return new ToStringBuilder(this, ToStringStyle.JSON_STYLE)
@@ -87,7 +87,7 @@ public class User {
         boats.remove(boat);
         if (boat.getId().equals(staffId)) {
             if (!boats.isEmpty()) {
-                staffId = boats.get(0).getId();
+                staffId = boats.iterator().next().getId();
             } else {
                 staffId = null;
             }

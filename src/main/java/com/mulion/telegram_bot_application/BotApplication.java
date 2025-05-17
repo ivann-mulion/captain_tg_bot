@@ -32,6 +32,10 @@ public class BotApplication extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        if (update.hasCallbackQuery()) {
+            clearInlineButton(update);
+        }
+
         Long userId = getUserId(update);
         if (userId == null) return;
 
@@ -39,8 +43,8 @@ public class BotApplication extends TelegramLongPollingBot {
 
         if (!checkUser(update, user, userId)) return;
 
-        UserRole role = user.getStep().getAction().getAccess();
-        switch (role) {
+        UserRole access = user.getActionStep().getAction().getAccess();
+        switch (access) {
             case ADMIN -> adminInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
         }
@@ -53,7 +57,7 @@ public class BotApplication extends TelegramLongPollingBot {
         messageService = new MessageService(getOptions(), token);
         DBBoatService boatService = new DBBoatService(new BoatRepository(sessionFactory));
         adminInterface = new AdminBotInterface(messageService, userService, boatService);
-        captainInterface = new CaptainBotInterface(messageService, userService, adminInterface);
+        captainInterface = adminInterface.getCaptainInterface();
     }
 
     public static void main(String[] args) {
@@ -71,7 +75,7 @@ public class BotApplication extends TelegramLongPollingBot {
         return ConfigService.getProperty(BOT_USER_NAME);
     }
 
-    private static Long getUserId(Update update) {
+    private Long getUserId(Update update) {
         long userId;
         if (!(update.hasMessage() && update.getMessage().hasText())) {
             if (!update.hasCallbackQuery()) {
@@ -84,8 +88,15 @@ public class BotApplication extends TelegramLongPollingBot {
         return userId;
     }
 
+    private Long getChatId(Update update) {
+        if (update.hasMessage()) {
+            return update.getMessage().getChatId();
+        }
+        return update.getCallbackQuery().getMessage().getChatId();
+    }
+
     private boolean checkUser(Update update, User user, long userId) {
-        Long chatId = update.getMessage().getChatId();
+        Long chatId = getChatId(update);
         if (user == null) {
             user = userService.addUser(
                     userId,
@@ -97,7 +108,7 @@ public class BotApplication extends TelegramLongPollingBot {
             registration(user, update);
             return false;
         }
-        if (user.getStep().getAction() == Action.REGISTRATION) {
+        if (user.getActionStep().getAction() == Action.REGISTRATION) {
             registration(user, update);
             return false;
         }
@@ -110,12 +121,9 @@ public class BotApplication extends TelegramLongPollingBot {
     private void registration(User user, Update update) {
         long chatId = update.getMessage().getChatId();
         String messageText = update.getMessage().getText();
-        int step = user.getStep().nextStep();
+        int step = userService.nextStep(user);
         switch (step) {
-            case 0 -> {
-                messageService.sendText(chatId, BotMassageTexts.REGISTRATION_LOGIN);
-                userService.updateUser(user);
-            }
+            case 0 -> messageService.sendText(chatId, BotMassageTexts.REGISTRATION_LOGIN);
             case 1 -> {
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_PASSWORD);
                 user.setLogin(messageText);
@@ -125,16 +133,20 @@ public class BotApplication extends TelegramLongPollingBot {
                 user.setPassword(messageText);
                 if (!YCUserService.authorization(user)) {
                     messageService.sendText(chatId, BotMassageTexts.REGISTRATION_ERROR);
-                    user.getStep().restartAction();
+                    userService.restartAction(user);
                     registration(user, update);
                     return;
                 }
-                user.getStep().inactivate();
+                userService.inactive(user);
                 userService.updateUser(user);
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
             }
         }
         System.out.println(user);
+    }
+
+    private void clearInlineButton(Update update) {
+        messageService.removeInlineButtons(update.getCallbackQuery());
     }
 }

@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 @Embeddable
-public class Step {
+public class ActionSteps {
     private Action action;
     private int step;
 
-    public Step() {
+    public ActionSteps() {
         action = Action.REGISTRATION;
         step = 0;
     }
@@ -25,6 +25,11 @@ public class Step {
 
     public void inactivate() {
         action = Action.INACTIVE;
+        step = 0;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
         step = 0;
     }
 }
