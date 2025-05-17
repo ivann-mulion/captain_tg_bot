@@ -5,15 +5,16 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum Date {
+public enum DateMenu {
     TODAY("today"),
     YESTERDAY("yesterday"),
     CUSTOM_DATE("custom_date"),
+    MENU("menu"),
     NOT_DATE(null);
 
-    private final String day;
+    private final String action;
 
-    public static Date getDateFromString(String string) {
+    public static DateMenu getDateFromString(String string) {
         try {
             return valueOf(string.toUpperCase());
         } catch (IllegalArgumentException e) {

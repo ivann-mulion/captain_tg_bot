@@ -4,8 +4,10 @@ import com.mulion.constants.BotMassageTexts;
 import com.mulion.constants.Config;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.User;
+import com.mulion.models.enums.Action;
+import com.mulion.models.enums.UserRole;
 import com.mulion.services.ReportService;
-import com.mulion.telegram_bot_application.enums.Date;
+import com.mulion.telegram_bot_application.enums.DateMenu;
 import com.mulion.telegram_bot_application.services.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -22,11 +24,15 @@ import java.util.List;
 public class CaptainBotInterface {
     private final MessageService messageService;
     private final DBUserService userService;
+    private final AdminBotInterface adminInterface;
 
     public void onUpdateReceived(User user, Update update) {
+        if (user.getStep().getAction().getAccess() != UserRole.CAPTAIN) {
+            adminInterface.onUpdateReceived(user, update);
+        }
+
         if (update.hasCallbackQuery()) {
-            handleCallback(update.getCallbackQuery());
-            sendInlineKeyboard(update.getMessage().getChatId());
+            handleCallback(update.getCallbackQuery(), user);
             return;
         }
 
@@ -42,12 +48,12 @@ public class CaptainBotInterface {
             }
         }
 
-        sendInlineKeyboard(chatId);
+        sendInlineKeyboard(user);
     }
 
-    private void handleCallback(CallbackQuery callbackQuery) {
+    private void handleCallback(CallbackQuery callbackQuery, User user) {
         String data = callbackQuery.getData();
-        Date date = Date.getDateFromString(data);
+        DateMenu date = DateMenu.getDateFromString(data);
         long chatId = callbackQuery.getMessage().getChatId();
         long userId = callbackQuery.getFrom().getId();
 
@@ -55,29 +61,38 @@ public class CaptainBotInterface {
             case YESTERDAY -> sendReport(chatId, userId, LocalDate.now().minusDays(1));
             case TODAY -> sendReport(chatId, userId, LocalDate.now());
             case CUSTOM_DATE -> messageService.sendText(chatId, BotMassageTexts.INPUT_DATE_MESSAGE);
-            default -> sendInlineKeyboard(chatId);
+            case MENU -> {
+                adminInterface.sendAdminMenu(user);
+                user.getStep().setAction(Action.MENU);
+            }
         }
+        sendInlineKeyboard(user);
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
         messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
     }
 
-    private void sendInlineKeyboard(long chatId) {
+    private void sendInlineKeyboard(User user) {
         SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
+        message.setChatId(String.valueOf(user.getChatId()));
         message.setText(BotMassageTexts.CHOOSE_DATE_MESSAGE);
 
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("📆 вчера").callbackData("yesterday").build(),
-                InlineKeyboardButton.builder().text("📅 сегодня").callbackData("today").build()
+                InlineKeyboardButton.builder().text("📆 вчера").callbackData(DateMenu.YESTERDAY.getAction()).build(),
+                InlineKeyboardButton.builder().text("📅 сегодня").callbackData(DateMenu.TODAY.getAction()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("🗓 за дату").callbackData("custom_date").build()
+                InlineKeyboardButton.builder().text("🗓 за дату").callbackData(DateMenu.CUSTOM_DATE.getAction()).build()
         ));
+        if (user.getRole() == UserRole.ADMIN) {
+            rows.add(List.of(
+                    InlineKeyboardButton.builder().text("меню").callbackData(DateMenu.MENU.getAction()).build()
+            ));
+        }
 
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);

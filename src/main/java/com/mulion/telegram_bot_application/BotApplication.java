@@ -53,7 +53,7 @@ public class BotApplication extends TelegramLongPollingBot {
         messageService = new MessageService(getOptions(), token);
         DBBoatService boatService = new DBBoatService(new BoatRepository(sessionFactory));
         adminInterface = new AdminBotInterface(messageService, userService, boatService);
-        captainInterface = new CaptainBotInterface(messageService, userService);
+        captainInterface = new CaptainBotInterface(messageService, userService, adminInterface);
     }
 
     public static void main(String[] args) {
