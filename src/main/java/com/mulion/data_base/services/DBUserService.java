@@ -5,6 +5,8 @@ import com.mulion.models.enums.UserRole;
 import com.mulion.models.Steps;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
+import org.hibernate.Session;
 
 import java.util.List;
 
@@ -16,14 +18,23 @@ public class DBUserService {
         return repository.findById(userId).orElse(null);
     }
 
+    public User getUserWithBoats(Long userId) {
+        try (Session session = repository.getSessionFactory().openSession()) {
+            User user = session.get(User.class, userId);
+            Hibernate.initialize(user.getBoats());
+            return user;
+        }
+    }
+
     public List<User> getUsers() {
         return repository.findAll();
     }
 
-    public User addUser(Long userId, String tgUserName, String name) {
+    public User addUser(Long userId, Long chatId, String tgUserName, String name) {
         User user = User.builder()
                 .id(userId)
                 .tgUserName(tgUserName)
+                .chatId(chatId)
                 .name(name)
                 .steps(new Steps())
                 .role(UserRole.CAPTAIN)

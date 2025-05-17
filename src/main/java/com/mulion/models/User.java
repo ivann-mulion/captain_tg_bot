@@ -40,6 +40,8 @@ public class User {
 
     @Column(name = "user_name")
     private String tgUserName;
+    @Column(name = "chat_id")
+    private Long chatId;
     private String name;
     @Column(name = "user_token")
     private String userToken;
@@ -73,6 +75,9 @@ public class User {
 
     public void addBoat(Boat boat) {
         if (boat == null) return;
+        if (staffId == null) {
+            staffId = boat.getId();
+        }
         boats.add(boat);
         boat.addUser(this);
     }
@@ -80,6 +85,13 @@ public class User {
     public void removeBoat(Boat boat) {
         if (boat == null) return;
         boats.remove(boat);
+        if (boat.getId().equals(staffId)) {
+            if (!boats.isEmpty()) {
+                staffId = boats.get(0).getId();
+            } else {
+                staffId = null;
+            }
+        }
         boat.removeUser(this);
     }
 

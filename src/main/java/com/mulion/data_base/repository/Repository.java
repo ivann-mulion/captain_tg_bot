@@ -1,5 +1,7 @@
 package com.mulion.data_base.repository;
 
+import org.hibernate.SessionFactory;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +17,6 @@ public interface Repository<T, ID> {
     void deleteById(ID id);
 
     T update(T t);
+
+    SessionFactory getSessionFactory();
 }

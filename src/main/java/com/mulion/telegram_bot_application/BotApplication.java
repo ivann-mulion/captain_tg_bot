@@ -2,9 +2,11 @@ package com.mulion.telegram_bot_application;
 
 import com.mulion.constants.BotMassageTexts;
 import com.mulion.data_base.SessionProvider;
+import com.mulion.data_base.repository.BoatRepository;
 import com.mulion.data_base.repository.UserRepository;
+import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
-import com.mulion.models.enums.UserRegistrationStatus;
+import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.models.User;
 import com.mulion.services.ConfigService;
@@ -12,6 +14,7 @@ import com.mulion.telegram_bot_application.role_interfaces.AdminBotInterface;
 import com.mulion.telegram_bot_application.role_interfaces.CaptainBotInterface;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCUserService;
+import org.hibernate.SessionFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -45,9 +48,11 @@ public class BotApplication extends TelegramLongPollingBot {
 
     public BotApplication(String token) {
         super(token);
-        userService = new DBUserService(new UserRepository(new SessionProvider().getSessionFactory()));
+        SessionFactory sessionFactory = new SessionProvider().getSessionFactory();
+        userService = new DBUserService(new UserRepository(sessionFactory));
         messageService = new MessageService(getOptions(), token);
-        adminInterface = new AdminBotInterface(messageService, userService);
+        DBBoatService boatService = new DBBoatService(new BoatRepository(sessionFactory));
+        adminInterface = new AdminBotInterface(messageService, userService, boatService);
         captainInterface = new CaptainBotInterface(messageService, userService);
     }
 
@@ -80,15 +85,24 @@ public class BotApplication extends TelegramLongPollingBot {
     }
 
     private boolean checkUser(Update update, User user, long userId) {
+        Long chatId = update.getMessage().getChatId();
         if (user == null) {
-            user = userService.addUser(userId, update.getMessage().getFrom().getUserName(), update.getMessage().getFrom().getFirstName());
+            user = userService.addUser(
+                    userId,
+                    chatId,
+                    update.getMessage().getFrom().getUserName(),
+                    update.getMessage().getFrom().getFirstName()
+            );
             messageService.sendText(update.getMessage().getChatId(), BotMassageTexts.REGISTRATION_GREETENG);
             registration(user, update);
             return false;
         }
-        if (user.getSteps().getRegistrationStatus() != UserRegistrationStatus.DONE) {
+        if (user.getSteps().getAction() == Action.REGISTRATION) {
             registration(user, update);
             return false;
+        }
+        if (!chatId.equals(user.getChatId())) {
+            user.setChatId(chatId);
         }
         return true;
     }
@@ -96,28 +110,26 @@ public class BotApplication extends TelegramLongPollingBot {
     private void registration(User user, Update update) {
         long chatId = update.getMessage().getChatId();
         String messageText = update.getMessage().getText();
-        UserRegistrationStatus status = user.getSteps().getRegistrationStatus();
-        switch (status) {
-            case START -> {
+        int step = user.getSteps().nextStep();
+        switch (step) {
+            case 0 -> {
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_LOGIN);
-                user.getSteps().setRegistrationStatus(UserRegistrationStatus.LOGIN);
                 userService.updateUser(user);
             }
-            case LOGIN -> {
+            case 1 -> {
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_PASSWORD);
                 user.setLogin(messageText);
-                user.getSteps().setRegistrationStatus(UserRegistrationStatus.PASSWORD);
                 userService.updateUser(user);
             }
-            case PASSWORD -> {
+            case 2 -> {
                 user.setPassword(messageText);
                 if (!YCUserService.authorization(user)) {
                     messageService.sendText(chatId, BotMassageTexts.REGISTRATION_ERROR);
-                    user.getSteps().setRegistrationStatus(UserRegistrationStatus.START);
+                    user.getSteps().restartAction();
                     registration(user, update);
                     return;
                 }
-                user.getSteps().setRegistrationStatus(UserRegistrationStatus.DONE);
+                user.getSteps().inactivate();
                 userService.updateUser(user);
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
