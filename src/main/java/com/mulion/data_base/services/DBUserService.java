@@ -1,7 +1,6 @@
 package com.mulion.data_base.services;
 
-import com.mulion.data_base.repository.Repository;
-import com.mulion.models.Boat;
+import com.mulion.data_base.repositories.Repository;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.models.ActionSteps;
@@ -22,7 +21,7 @@ public class DBUserService {
     }
 
     public User getUserWithBoats(Long userId) {
-        try (Session session = repository.getSessionFactory().openSession()) {
+        try (Session session = repository.openSession()) {
             User user = session.get(User.class, userId);
             Hibernate.initialize(user.getBoats());
             return user;
@@ -68,6 +67,17 @@ public class DBUserService {
             updateUser(user);
             return true;
         } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean setUserRole(Long userId, UserRole userRole) {
+        try {
+            User user = getUser(userId);
+            user.setRole(userRole);
+            updateUser(user);
+            return true;
+        } catch (RuntimeException e) {
             return false;
         }
     }

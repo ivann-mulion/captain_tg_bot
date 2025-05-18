@@ -1,7 +1,6 @@
-package com.mulion.data_base.repository;
+package com.mulion.data_base.repositories;
 
 import com.mulion.models.Boat;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -11,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-@Getter
 public class BoatRepository implements Repository<Boat, Long> {
     private final SessionFactory sessionFactory;
 
@@ -61,5 +59,10 @@ public class BoatRepository implements Repository<Boat, Long> {
             session.merge(boat);
             transaction.commit();
         }
+    }
+
+    @Override
+    public Session openSession() {
+        return sessionFactory.openSession();
     }
 }

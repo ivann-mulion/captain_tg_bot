@@ -60,6 +60,8 @@ public class User {
     private final Set<Boat> boats = new HashSet<>();
     @Column(name = "staff_id")
     private Long staffId;
+    @Column(name = "boats_count")
+    private int boatsCount;
     private String login;
     private String password;
     private int cash;
@@ -79,6 +81,7 @@ public class User {
             staffId = boat.getId();
         }
         boats.add(boat);
+        boatsCount++;
     }
 
     public void removeBoat(Boat boat) {
@@ -91,6 +94,7 @@ public class User {
                 staffId = null;
             }
         }
+        boatsCount--;
     }
 
     public void addCash(int cash) {

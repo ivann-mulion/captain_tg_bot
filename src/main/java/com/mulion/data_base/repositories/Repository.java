@@ -1,5 +1,6 @@
-package com.mulion.data_base.repository;
+package com.mulion.data_base.repositories;
 
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 import java.util.List;
@@ -18,5 +19,5 @@ public interface Repository<T, ID> {
 
     void update(T t);
 
-    SessionFactory getSessionFactory();
+    Session openSession();
 }

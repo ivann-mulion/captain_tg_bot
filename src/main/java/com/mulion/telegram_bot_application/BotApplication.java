@@ -2,8 +2,8 @@ package com.mulion.telegram_bot_application;
 
 import com.mulion.constants.BotMassageTexts;
 import com.mulion.data_base.SessionProvider;
-import com.mulion.data_base.repository.BoatRepository;
-import com.mulion.data_base.repository.UserRepository;
+import com.mulion.data_base.repositories.BoatRepository;
+import com.mulion.data_base.repositories.UserRepository;
 import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.enums.Action;

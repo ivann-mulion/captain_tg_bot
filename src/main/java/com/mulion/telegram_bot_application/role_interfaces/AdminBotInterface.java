@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminBotInterface {
+    public static final String ADMIN_ACCESS_ERROR = "wtf man u r not an admin";
     private final MessageService messageService;
     private final DBUserService userService;
     private final DBBoatService boatService;
@@ -44,6 +45,7 @@ public class AdminBotInterface {
             switch (action) {
                 case ADD_BOAT_IN_SYSTEM -> addBoatInSystem(user, update);
                 case ADD_BOAT_TO_CAPTAIN, REMOVE_CAPTAINS_BOAT -> captainsBoatActions(user, update);
+                case SET_USERS_ROLE -> setUsersRole(user, update);
                 default -> adminMenu(user, update);
             }
         } catch (Exception e) {
@@ -51,11 +53,34 @@ public class AdminBotInterface {
         }
     }
 
+    public void adminMenu(User user, Update update) {
+        Action action = Action.valueOf(update.getCallbackQuery().getData());
+
+        switch (action) {
+            case ADD_BOAT_IN_SYSTEM -> {
+                userService.setAction(user, Action.ADD_BOAT_IN_SYSTEM);
+                addBoatInSystem(user, update);
+            }
+            case ADD_BOAT_TO_CAPTAIN -> {
+                userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
+                captainsBoatActions(user, update);
+            }
+            case REMOVE_CAPTAINS_BOAT -> {
+                userService.setAction(user, Action.REMOVE_CAPTAINS_BOAT);
+                captainsBoatActions(user, update);
+            }
+            case SET_USERS_ROLE -> {
+                userService.setAction(user, Action.SET_USERS_ROLE);
+                setUsersRole(user, update);
+            }
+            default -> captainInterface.sendMenu(user);
+        }
+    }
+
     private boolean checkUserAccess(User user) {
         if (user.getRole() != UserRole.ADMIN) {
-            System.out.println("ALARM");
-            messageService.sendText(user.getChatId(), "wrf man u r not an admin");
-            userService.inactive(user);
+            messageService.sendText(user.getChatId(), ADMIN_ACCESS_ERROR);
+            captainInterface.sendMenu(user);
             return false;
         }
         return true;
@@ -104,13 +129,10 @@ public class AdminBotInterface {
             return;
         }
 
-        long chatId = user.getChatId();
-
-        Long id = null;
-        try {
-            id = Long.valueOf(update.getCallbackQuery().getData());
-        } catch (NumberFormatException e) {
-            messageService.sendText(chatId, "id parsing error - " + id);
+        Long id = getId(user, update);
+        if (id == null) {
+            sendMenu(user);
+            return;
         }
 
         switch (step) {
@@ -131,9 +153,9 @@ public class AdminBotInterface {
                 }
                 user = updateAdminUser(user);
                 if (isOk) {
-                    messageService.sendText(chatId, "ok");
+                    messageService.sendText(user.getChatId(), "ok");
                 } else {
-                    messageService.sendText(chatId, "something wrong");
+                    messageService.sendText(user.getChatId(), "something wrong");
                 }
                 sendMenu(user);
             }
@@ -141,11 +163,45 @@ public class AdminBotInterface {
         }
     }
 
-    private User updateAdminUser(User user) {
-        if (bufferUserId.equals(user.getId())) {
-            user = userService.getUser(bufferUserId);
+    private void setUsersRole(User user, Update update) {
+        int step = userService.nextStep(user);
+
+        if (step == 0) {
+            sendCaptains(user);
+            return;
         }
-        return user;
+
+        switch (step) {
+            case 1 -> {
+                bufferUserId = getId(user, update);
+                if (bufferUserId == null) {
+                    sendMenu(user);
+                    return;
+                }
+                sendRoles(user);
+            }
+            case 2 -> {
+                UserRole role = UserRole.valueOf(update.getCallbackQuery().getData());
+                if (userService.setUserRole(bufferUserId, role)) {
+                    messageService.sendText(user.getChatId(), "ok");
+                } else {
+                    messageService.sendText(user.getChatId(), "something wrong");
+                }
+                user = updateAdminUser(user);
+                sendMenu(user);
+            }
+            default -> messageService.sendText(user.getChatId(), "logger error");
+        }
+    }
+
+    private Long getId(User user, Update update) {
+        Long id = null;
+        try {
+            id = Long.valueOf(update.getCallbackQuery().getData());
+        } catch (NumberFormatException e) {
+            messageService.sendText(user.getChatId(), "id parsing error - " + id);
+        }
+        return id;
     }
 
     public void sendMenu(User user) {
@@ -165,24 +221,15 @@ public class AdminBotInterface {
         sendInlineKeyboard(userChat, getBoatsInlineButtons(userBoats.getBoats().stream().toList()), "choose boat");
     }
 
-    public void adminMenu(User user, Update update) {
-        Action action = Action.valueOf(update.getCallbackQuery().getData());
+    private void sendRoles(User user) {
+        sendInlineKeyboard(user, getRolesInlineButtons(), "choose role");
+    }
 
-        switch (action) {
-            case ADD_BOAT_IN_SYSTEM -> {
-                userService.setAction(user, Action.ADD_BOAT_IN_SYSTEM);
-                addBoatInSystem(user, update);
-            }
-            case ADD_BOAT_TO_CAPTAIN -> {
-                userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
-                captainsBoatActions(user, update);
-            }
-            case REMOVE_CAPTAINS_BOAT -> {
-                userService.setAction(user, Action.REMOVE_CAPTAINS_BOAT);
-                captainsBoatActions(user, update);
-            }
-            default -> captainInterface.sendMenu(user);
+    private User updateAdminUser(User user) {
+        if (bufferUserId.equals(user.getId())) {
+            user = userService.getUser(bufferUserId);
         }
+        return user;
     }
 
     private void sendInlineKeyboard(User user, List<List<InlineKeyboardButton>> rows, String text) {
@@ -230,18 +277,37 @@ public class AdminBotInterface {
         return rows;
     }
 
+    private List<List<InlineKeyboardButton>> getRolesInlineButtons() {
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        for (UserRole role : UserRole.values()) {
+            rows.add(List.of(
+                    InlineKeyboardButton.builder()
+                            .text(role.toString())
+                            .callbackData(role.toString())
+                            .build()
+            ));
+        }
+
+        return rows;
+    }
+
     private List<List<InlineKeyboardButton>> getMenuInlineButtons() {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("добавить яхту капитану").callbackData(Action.ADD_BOAT_TO_CAPTAIN.toString()).build(),
-                InlineKeyboardButton.builder().text("удалить яхту капитана").callbackData(Action.REMOVE_CAPTAINS_BOAT.toString()).build()
+                InlineKeyboardButton.builder().text("add cap boat").callbackData(Action.ADD_BOAT_TO_CAPTAIN.toString()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("добавить яхту").callbackData(Action.ADD_BOAT_IN_SYSTEM.toString()).build()
+                InlineKeyboardButton.builder().text("remove caps boat").callbackData(Action.REMOVE_CAPTAINS_BOAT.toString()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("назад").callbackData(Action.INACTIVE.toString()).build()
+                InlineKeyboardButton.builder().text("set users role").callbackData(Action.SET_USERS_ROLE.toString()).build()
+        ));
+        rows.add(List.of(
+                InlineKeyboardButton.builder().text("add boat").callbackData(Action.ADD_BOAT_IN_SYSTEM.toString()).build()
+        ));
+        rows.add(List.of(
+                InlineKeyboardButton.builder().text("back").callbackData(Action.INACTIVE.toString()).build()
         ));
 
         return rows;
