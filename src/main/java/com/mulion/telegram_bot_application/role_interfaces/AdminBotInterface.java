@@ -9,9 +9,7 @@ import com.mulion.models.enums.UserRole;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCBoatService;
 import lombok.Getter;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.util.ArrayList;
@@ -73,14 +71,14 @@ public class AdminBotInterface {
                 userService.setAction(user, Action.SET_USERS_ROLE);
                 setUsersRole(user, update);
             }
-            default -> captainInterface.sendMenu(user);
+            default -> captainInterface.sendBaseMenu(user);
         }
     }
 
     private boolean checkUserAccess(User user) {
         if (user.getRole() != UserRole.ADMIN) {
             messageService.sendText(user.getChatId(), ADMIN_ACCESS_ERROR);
-            captainInterface.sendMenu(user);
+            captainInterface.sendBaseMenu(user);
             return false;
         }
         return true;
@@ -129,7 +127,7 @@ public class AdminBotInterface {
             return;
         }
 
-        Long id = getId(user, update);
+        Long id = captainInterface.getId(user, update);
         if (id == null) {
             sendMenu(user);
             return;
@@ -141,7 +139,7 @@ public class AdminBotInterface {
                 if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
                     sendAllBoats(user);
                 } else {
-                    sendUsersBoats(user, userService.getUserWithBoats(id));
+                    sendCaptainsBoats(user, userService.getUserWithBoats(id));
                 }
             }
             case 2 -> {
@@ -173,7 +171,7 @@ public class AdminBotInterface {
 
         switch (step) {
             case 1 -> {
-                bufferUserId = getId(user, update);
+                bufferUserId = captainInterface.getId(user, update);
                 if (bufferUserId == null) {
                     sendMenu(user);
                     return;
@@ -194,35 +192,29 @@ public class AdminBotInterface {
         }
     }
 
-    private Long getId(User user, Update update) {
-        Long id = null;
-        try {
-            id = Long.valueOf(update.getCallbackQuery().getData());
-        } catch (NumberFormatException e) {
-            messageService.sendText(user.getChatId(), "id parsing error - " + id);
-        }
-        return id;
-    }
-
     public void sendMenu(User user) {
-        sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
-        userService.setAction(user, Action.MENU);
+        userService.setAction(user, Action.ADMIN_MENU);
+        messageService.sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
     }
 
     private void sendCaptains(User user) {
-        sendInlineKeyboard(user, getUsersInlineButtons(), "choose captain");
+        messageService.sendInlineKeyboard(user, getUsersInlineButtons(), "choose captain");
     }
 
     private void sendAllBoats(User user) {
-        sendInlineKeyboard(user, getBoatsInlineButtons(boatService.getBoats()), "choose boat");
+        messageService.sendInlineKeyboard(user,
+                captainInterface.getBoatsInlineButtons(boatService.getBoats()),
+                "choose boat");
     }
 
-    private void sendUsersBoats(User userChat, User userBoats) {
-        sendInlineKeyboard(userChat, getBoatsInlineButtons(userBoats.getBoats().stream().toList()), "choose boat");
+    private void sendCaptainsBoats(User userChat, User userBoats) {
+        messageService.sendInlineKeyboard(userChat,
+                captainInterface.getBoatsInlineButtons(userBoats.getBoats().stream().toList()),
+                "choose boat");
     }
 
     private void sendRoles(User user) {
-        sendInlineKeyboard(user, getRolesInlineButtons(), "choose role");
+        messageService.sendInlineKeyboard(user, getRolesInlineButtons(), "choose role");
     }
 
     private User updateAdminUser(User user) {
@@ -230,19 +222,6 @@ public class AdminBotInterface {
             user = userService.getUser(bufferUserId);
         }
         return user;
-    }
-
-    private void sendInlineKeyboard(User user, List<List<InlineKeyboardButton>> rows, String text) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(user.getChatId()));
-        message.setText(text);
-
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-
-        markup.setKeyboard(rows);
-        message.setReplyMarkup(markup);
-
-        messageService.sendMessage(message);
     }
 
     private List<List<InlineKeyboardButton>> getUsersInlineButtons() {
@@ -255,21 +234,6 @@ public class AdminBotInterface {
                     InlineKeyboardButton.builder()
                             .text(user.getName())
                             .callbackData(user.getId().toString())
-                            .build()
-            ));
-        }
-
-        return rows;
-    }
-
-    private List<List<InlineKeyboardButton>> getBoatsInlineButtons(List<Boat> boats) {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        for (Boat boat : boats) {
-            rows.add(List.of(
-                    InlineKeyboardButton.builder()
-                            .text(boat.getName())
-                            .callbackData(boat.getId().toString())
                             .build()
             ));
         }

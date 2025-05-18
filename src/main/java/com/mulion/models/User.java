@@ -61,7 +61,7 @@ public class User {
     @Column(name = "staff_id")
     private Long staffId;
     @Column(name = "boats_count")
-    private int boatsCount;
+    private Integer boatsCount;
     private String login;
     private String password;
     private int cash;
@@ -81,7 +81,7 @@ public class User {
             staffId = boat.getId();
         }
         boats.add(boat);
-        boatsCount++;
+        boatsCount = boats.size();
     }
 
     public void removeBoat(Boat boat) {
@@ -94,7 +94,7 @@ public class User {
                 staffId = null;
             }
         }
-        boatsCount--;
+        boatsCount = boats.size();
     }
 
     public void addCash(int cash) {

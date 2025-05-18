@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 public enum Action {
     INACTIVE(UserRole.CAPTAIN),
     REGISTRATION(UserRole.CAPTAIN),
-    MENU(UserRole.ADMIN),
+    CAPTAIN_MENU(UserRole.CAPTAIN),
+    CHANGE_BOAT(UserRole.CAPTAIN),
+    MANAGER_MENU(UserRole.MANAGER),
+    ADMIN_MENU(UserRole.ADMIN),
     ADD_BOAT_IN_SYSTEM(UserRole.ADMIN),
     ADD_BOAT_TO_CAPTAIN(UserRole.ADMIN),
     REMOVE_CAPTAINS_BOAT(UserRole.ADMIN),

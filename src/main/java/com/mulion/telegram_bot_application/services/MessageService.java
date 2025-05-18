@@ -1,11 +1,16 @@
 package com.mulion.telegram_bot_application.services;
 
+import com.mulion.models.User;
 import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.List;
 
 public class MessageService extends DefaultAbsSender {
     public MessageService(DefaultBotOptions options, String botToken) {
@@ -24,7 +29,7 @@ public class MessageService extends DefaultAbsSender {
         }
     }
 
-    public void sendMessage(SendMessage message) {
+    public void editMessage(EditMessageReplyMarkup message) {
         try {
             execute(message);
         } catch (TelegramApiException e) {
@@ -32,12 +37,17 @@ public class MessageService extends DefaultAbsSender {
         }
     }
 
-    public void editMessage(EditMessageReplyMarkup message) {
-        try {
-            execute(message);
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
+    public void sendInlineKeyboard(User user, List<List<InlineKeyboardButton>> rows, String text) {
+        SendMessage message = new SendMessage();
+        message.setChatId(user.getChatId().toString());
+        message.setText(text);
+
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+
+        markup.setKeyboard(rows);
+        message.setReplyMarkup(markup);
+
+        sendMessage(message);
     }
 
     public void removeInlineButtons(CallbackQuery callbackQuery) {
@@ -50,5 +60,13 @@ public class MessageService extends DefaultAbsSender {
         editMarkup.setReplyMarkup(null);
 
         editMessage(editMarkup);
+    }
+
+    private void sendMessage(SendMessage message) {
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
     }
 }

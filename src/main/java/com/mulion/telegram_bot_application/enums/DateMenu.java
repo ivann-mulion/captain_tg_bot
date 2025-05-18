@@ -9,5 +9,7 @@ public enum DateMenu {
     TODAY,
     YESTERDAY,
     CUSTOM_DATE,
-    MENU
+    CAPTAIN_MENU,
+    MANAGER_MENU,
+    ADMIN_MENU
 }
