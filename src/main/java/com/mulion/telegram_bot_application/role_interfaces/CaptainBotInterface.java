@@ -2,6 +2,7 @@ package com.mulion.telegram_bot_application.role_interfaces;
 
 import com.mulion.constants.BotMassageTexts;
 import com.mulion.constants.Config;
+import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.Boat;
 import com.mulion.models.User;
@@ -9,6 +10,7 @@ import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.services.ReportService;
 import com.mulion.telegram_bot_application.enums.DateMenu;
+import com.mulion.telegram_bot_application.services.InterfaceService;
 import com.mulion.telegram_bot_application.services.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
@@ -22,8 +24,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CaptainBotInterface {
     private final MessageService messageService;
+    private final InterfaceService interfaceService;
+    private final DBBoatService boatService;
     private final DBUserService userService;
     private final AdminBotInterface adminInterface;
+    private final ManagerBotInterface managerInterface;
 
     public void onUpdateReceived(User user, Update update) {
         Action action = user.getActionStep().getAction();
@@ -74,6 +79,10 @@ public class CaptainBotInterface {
                 sendCaptainMenu(user);
                 return;
             }
+            case MANAGER_MENU -> {
+                managerInterface.sendMenu(user);
+                return;
+            }
             case ADMIN_MENU -> {
                 adminInterface.sendMenu(user);
                 return;
@@ -102,7 +111,7 @@ public class CaptainBotInterface {
             return;
         }
 
-        Long id = getId(user, update);
+        Long id = interfaceService.getId(user, update);
         if (id == null) {
             sendBaseMenu(user);
             return;
@@ -113,7 +122,7 @@ public class CaptainBotInterface {
     }
 
     private void sendReport(long chatId, long userId, LocalDate date) {
-        messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date));
+        messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date, boatService));
     }
 
     public void sendBaseMenu(User user) {
@@ -127,7 +136,9 @@ public class CaptainBotInterface {
     }
 
     private void sendCaptainsBoats(User user) {
-        messageService.sendInlineKeyboard(user, getBoatsInlineButtons(user.getBoats().stream().toList()), "choose boat");
+        messageService.sendInlineKeyboard(user,
+                interfaceService.getBoatsInlineButtons(user.getBoats().stream().toList()),
+                "choose boat");
     }
 
     private List<List<InlineKeyboardButton>> getBaseMenuInlineButtons(User user) {
@@ -171,30 +182,5 @@ public class CaptainBotInterface {
         ));
 
         return rows;
-    }
-
-    public List<List<InlineKeyboardButton>> getBoatsInlineButtons(List<Boat> boats) {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        for (Boat boat : boats) {
-            rows.add(List.of(
-                    InlineKeyboardButton.builder()
-                            .text(boat.getName())
-                            .callbackData(boat.getId().toString())
-                            .build()
-            ));
-        }
-
-        return rows;
-    }
-
-    public Long getId(User user, Update update) {
-        Long id = null;
-        try {
-            id = Long.valueOf(update.getCallbackQuery().getData());
-        } catch (NumberFormatException e) {
-            messageService.sendText(user.getChatId(), "id parsing error - " + id);
-        }
-        return id;
     }
 }

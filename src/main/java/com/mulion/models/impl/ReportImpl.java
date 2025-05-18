@@ -1,5 +1,6 @@
 package com.mulion.models.impl;
 
+import com.mulion.models.Boat;
 import com.mulion.models.User;
 import com.mulion.models.Record;
 import com.mulion.models.Report;
@@ -24,12 +25,14 @@ public class ReportImpl implements Report {
     private double workHours;
     private int prepayment;
     private int acquiring;
+    private Boat boat;
     private int cash;
 
-    public ReportImpl(User user, LocalDate date, List<Record> records) {
+    public ReportImpl(User user, LocalDate date, List<Record> records, Boat boat) {
         this.user = user;
         this.date = date;
         this.records = records;
+        this.boat = boat;
         records.sort(Comparator.comparing(Record::getDate)
                 .thenComparing(Record::getStartTime));
         records.forEach(re -> {
@@ -49,8 +52,9 @@ public class ReportImpl implements Report {
     private String getReportTextPrivate() {
         StringBuilder result = new StringBuilder();
         result.append(date.format(reportDateFormatter))
-                .append(String.format(" (%s)%n%s%n",
+                .append(String.format(" (%s) - %s%n%s%n",
                         date.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("ru")),
+                        boat.getName(),
                         DELIMITER));
         records.forEach(re -> result.append(re).append('\n'));
         result.append(String.format("""

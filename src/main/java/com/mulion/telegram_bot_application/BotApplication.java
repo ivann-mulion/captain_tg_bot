@@ -12,6 +12,7 @@ import com.mulion.models.User;
 import com.mulion.services.ConfigService;
 import com.mulion.telegram_bot_application.role_interfaces.AdminBotInterface;
 import com.mulion.telegram_bot_application.role_interfaces.CaptainBotInterface;
+import com.mulion.telegram_bot_application.role_interfaces.ManagerBotInterface;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCUserService;
 import org.hibernate.SessionFactory;
@@ -28,6 +29,7 @@ public class BotApplication extends TelegramLongPollingBot {
     private final DBUserService userService;
     private final MessageService messageService;
     private final AdminBotInterface adminInterface;
+    private final ManagerBotInterface managerInterface;
     private final CaptainBotInterface captainInterface;
 
     @Override
@@ -46,6 +48,7 @@ public class BotApplication extends TelegramLongPollingBot {
         UserRole access = user.getActionStep().getAction().getAccess();
         switch (access) {
             case ADMIN -> adminInterface.onUpdateReceived(user, update);
+            case MANAGER -> managerInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
         }
     }
@@ -57,6 +60,7 @@ public class BotApplication extends TelegramLongPollingBot {
         userService = new DBUserService(new UserRepository(sessionFactory), boatService);
         messageService = new MessageService(getOptions(), token);
         adminInterface = new AdminBotInterface(messageService, userService, boatService);
+        managerInterface = adminInterface.getManagerInterface();
         captainInterface = adminInterface.getCaptainInterface();
     }
 

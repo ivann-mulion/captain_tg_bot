@@ -6,6 +6,7 @@ import com.mulion.models.Boat;
 import com.mulion.models.User;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
+import com.mulion.telegram_bot_application.services.InterfaceService;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCBoatService;
 import lombok.Getter;
@@ -18,10 +19,13 @@ import java.util.List;
 public class AdminBotInterface {
     public static final String ADMIN_ACCESS_ERROR = "wtf man u r not an admin";
     private final MessageService messageService;
+    private final InterfaceService interfaceService;
     private final DBUserService userService;
     private final DBBoatService boatService;
     @Getter
     private final CaptainBotInterface captainInterface;
+    @Getter
+    private final ManagerBotInterface managerInterface;
     private Long bufferUserId;
     private Boat.BoatBuilder boatBuilder;
 
@@ -29,7 +33,14 @@ public class AdminBotInterface {
         this.messageService = messageService;
         this.userService = userService;
         this.boatService = boatService;
-        this.captainInterface = new CaptainBotInterface(messageService, userService, this);
+        this.interfaceService = new InterfaceService(messageService, userService, boatService);
+        this.managerInterface = new ManagerBotInterface(
+                messageService,
+                interfaceService,
+                boatService,
+                userService,
+                this);
+        this.captainInterface = managerInterface.getCaptainInterface();
     }
 
     public void onUpdateReceived(User user, Update update) {
@@ -42,7 +53,6 @@ public class AdminBotInterface {
         try {
             switch (action) {
                 case ADD_BOAT_IN_SYSTEM -> addBoatInSystem(user, update);
-                case ADD_BOAT_TO_CAPTAIN, REMOVE_CAPTAINS_BOAT -> captainsBoatActions(user, update);
                 case SET_USERS_ROLE -> setUsersRole(user, update);
                 default -> adminMenu(user, update);
             }
@@ -58,14 +68,6 @@ public class AdminBotInterface {
             case ADD_BOAT_IN_SYSTEM -> {
                 userService.setAction(user, Action.ADD_BOAT_IN_SYSTEM);
                 addBoatInSystem(user, update);
-            }
-            case ADD_BOAT_TO_CAPTAIN -> {
-                userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
-                captainsBoatActions(user, update);
-            }
-            case REMOVE_CAPTAINS_BOAT -> {
-                userService.setAction(user, Action.REMOVE_CAPTAINS_BOAT);
-                captainsBoatActions(user, update);
             }
             case SET_USERS_ROLE -> {
                 userService.setAction(user, Action.SET_USERS_ROLE);
@@ -119,64 +121,22 @@ public class AdminBotInterface {
         }
     }
 
-    private void captainsBoatActions(User user, Update update) {
-        int step = userService.nextStep(user);
-
-        if (step == 0) {
-            sendCaptains(user);
-            return;
-        }
-
-        Long id = captainInterface.getId(user, update);
-        if (id == null) {
-            sendMenu(user);
-            return;
-        }
-
-        switch (step) {
-            case 1 -> {
-                bufferUserId = id;
-                if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
-                    sendAllBoats(user);
-                } else {
-                    sendCaptainsBoats(user, userService.getUserWithBoats(id));
-                }
-            }
-            case 2 -> {
-                boolean isOk;
-                if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
-                    isOk = userService.addBoatToUser(bufferUserId, id);
-                } else {
-                    isOk = userService.removeUsersBoat(bufferUserId, id);
-                }
-                user = updateAdminUser(user);
-                if (isOk) {
-                    messageService.sendText(user.getChatId(), "ok");
-                } else {
-                    messageService.sendText(user.getChatId(), "something wrong");
-                }
-                sendMenu(user);
-            }
-            default -> messageService.sendText(user.getChatId(), "logger error");
-        }
-    }
-
     private void setUsersRole(User user, Update update) {
         int step = userService.nextStep(user);
 
         if (step == 0) {
-            sendCaptains(user);
+            interfaceService.sendCaptains(user);
             return;
         }
 
         switch (step) {
             case 1 -> {
-                bufferUserId = captainInterface.getId(user, update);
+                bufferUserId = interfaceService.getId(user, update);
                 if (bufferUserId == null) {
                     sendMenu(user);
                     return;
                 }
-                sendRoles(user);
+                interfaceService.sendRoles(user);
             }
             case 2 -> {
                 UserRole role = UserRole.valueOf(update.getCallbackQuery().getData());
@@ -185,7 +145,7 @@ public class AdminBotInterface {
                 } else {
                     messageService.sendText(user.getChatId(), "something wrong");
                 }
-                user = updateAdminUser(user);
+                user = interfaceService.updateAdminUser(user, bufferUserId);
                 sendMenu(user);
             }
             default -> messageService.sendText(user.getChatId(), "logger error");
@@ -197,73 +157,9 @@ public class AdminBotInterface {
         messageService.sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
     }
 
-    private void sendCaptains(User user) {
-        messageService.sendInlineKeyboard(user, getUsersInlineButtons(), "choose captain");
-    }
-
-    private void sendAllBoats(User user) {
-        messageService.sendInlineKeyboard(user,
-                captainInterface.getBoatsInlineButtons(boatService.getBoats()),
-                "choose boat");
-    }
-
-    private void sendCaptainsBoats(User userChat, User userBoats) {
-        messageService.sendInlineKeyboard(userChat,
-                captainInterface.getBoatsInlineButtons(userBoats.getBoats().stream().toList()),
-                "choose boat");
-    }
-
-    private void sendRoles(User user) {
-        messageService.sendInlineKeyboard(user, getRolesInlineButtons(), "choose role");
-    }
-
-    private User updateAdminUser(User user) {
-        if (bufferUserId.equals(user.getId())) {
-            user = userService.getUser(bufferUserId);
-        }
-        return user;
-    }
-
-    private List<List<InlineKeyboardButton>> getUsersInlineButtons() {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        List<User> users = userService.getUsers();
-
-        for (User user : users) {
-            rows.add(List.of(
-                    InlineKeyboardButton.builder()
-                            .text(user.getName())
-                            .callbackData(user.getId().toString())
-                            .build()
-            ));
-        }
-
-        return rows;
-    }
-
-    private List<List<InlineKeyboardButton>> getRolesInlineButtons() {
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        for (UserRole role : UserRole.values()) {
-            rows.add(List.of(
-                    InlineKeyboardButton.builder()
-                            .text(role.toString())
-                            .callbackData(role.toString())
-                            .build()
-            ));
-        }
-
-        return rows;
-    }
-
     private List<List<InlineKeyboardButton>> getMenuInlineButtons() {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
-        rows.add(List.of(
-                InlineKeyboardButton.builder().text("add cap boat").callbackData(Action.ADD_BOAT_TO_CAPTAIN.toString()).build()
-        ));
-        rows.add(List.of(
-                InlineKeyboardButton.builder().text("remove caps boat").callbackData(Action.REMOVE_CAPTAINS_BOAT.toString()).build()
-        ));
         rows.add(List.of(
                 InlineKeyboardButton.builder().text("set users role").callbackData(Action.SET_USERS_ROLE.toString()).build()
         ));
