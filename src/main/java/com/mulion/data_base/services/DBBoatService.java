@@ -17,14 +17,6 @@ public class DBBoatService {
         return repository.findById(boatId).orElse(null);
     }
 
-    public Boat getBoatWithUsers(Long userId) {
-        try (Session session = repository.getSessionFactory().openSession()) {
-            Boat boat = session.get(Boat.class, userId);
-            Hibernate.initialize(boat.getUsers());
-            return boat;
-        }
-    }
-
     public List<Boat> getBoats() {
         return repository.findAll();
     }
@@ -34,7 +26,7 @@ public class DBBoatService {
         return boat;
     }
 
-    public void updateUser(Boat boat) {
+    public void updateBoat(Boat boat) {
         repository.update(boat);
     }
 }

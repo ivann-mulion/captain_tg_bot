@@ -9,8 +9,9 @@ public enum Action {
     INACTIVE(UserRole.CAPTAIN),
     REGISTRATION(UserRole.CAPTAIN),
     MENU(UserRole.ADMIN),
-    ADD_BOAT(UserRole.ADMIN),
-    ADD_BOAT_TO_CAPTAIN(UserRole.ADMIN);
+    ADD_BOAT_IN_SYSTEM(UserRole.ADMIN),
+    ADD_BOAT_TO_CAPTAIN(UserRole.ADMIN),
+    REMOVE_CAPTAINS_BOAT(UserRole.ADMIN);
 
     private final UserRole access;
 }

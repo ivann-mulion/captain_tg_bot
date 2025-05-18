@@ -53,9 +53,9 @@ public class BotApplication extends TelegramLongPollingBot {
     public BotApplication(String token) {
         super(token);
         SessionFactory sessionFactory = new SessionProvider().getSessionFactory();
-        userService = new DBUserService(new UserRepository(sessionFactory));
-        messageService = new MessageService(getOptions(), token);
         DBBoatService boatService = new DBBoatService(new BoatRepository(sessionFactory));
+        userService = new DBUserService(new UserRepository(sessionFactory), boatService);
+        messageService = new MessageService(getOptions(), token);
         adminInterface = new AdminBotInterface(messageService, userService, boatService);
         captainInterface = adminInterface.getCaptainInterface();
     }

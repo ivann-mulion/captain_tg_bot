@@ -16,7 +16,7 @@ public interface Repository<T, ID> {
 
     void deleteById(ID id);
 
-    T update(T t);
+    void update(T t);
 
     SessionFactory getSessionFactory();
 }

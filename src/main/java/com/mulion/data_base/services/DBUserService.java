@@ -1,6 +1,7 @@
 package com.mulion.data_base.services;
 
 import com.mulion.data_base.repository.Repository;
+import com.mulion.models.Boat;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.models.ActionSteps;
@@ -14,6 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DBUserService {
     private final Repository<User, Long> repository;
+    private final DBBoatService boatService;
 
     public User getUser(Long userId) {
         return repository.findById(userId).orElse(null);
@@ -46,6 +48,28 @@ public class DBUserService {
 
     public void updateUser(User user) {
         repository.update(user);
+    }
+
+    public boolean addBoatToUser(Long userId, Long boatId) {
+        try {
+            User user = getUserWithBoats(userId);
+            user.addBoat(boatService.getBoat(boatId));
+            updateUser(user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean removeUsersBoat(Long userId, Long boatId) {
+        try {
+            User user = getUserWithBoats(userId);
+            user.removeBoat(boatService.getBoat(boatId));
+            updateUser(user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public int nextStep(User user) {

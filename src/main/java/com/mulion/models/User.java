@@ -79,7 +79,6 @@ public class User {
             staffId = boat.getId();
         }
         boats.add(boat);
-        boat.addUser(this);
     }
 
     public void removeBoat(Boat boat) {
@@ -92,7 +91,6 @@ public class User {
                 staffId = null;
             }
         }
-        boat.removeUser(this);
     }
 
     public void addCash(int cash) {

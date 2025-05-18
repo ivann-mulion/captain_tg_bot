@@ -55,12 +55,11 @@ public class UserRepository implements Repository<User, Long> {
     }
 
     @Override
-    public User update(User user) {
+    public void update(User user) {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
             session.merge(user);
             transaction.commit();
         }
-        return user;
     }
 }

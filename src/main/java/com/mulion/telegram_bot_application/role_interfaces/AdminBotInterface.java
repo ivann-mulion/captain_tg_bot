@@ -18,15 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminBotInterface {
-    public static final String ADD_BOAT_TO_CAPTAIN = "add_boat_to_captain";
-    public static final String ADD_BOAT_IN_SYSTEM = "add_boat_in_system";
-    public static final String BACK = "back";
     private final MessageService messageService;
     private final DBUserService userService;
     private final DBBoatService boatService;
     @Getter
     private final CaptainBotInterface captainInterface;
-    private User userBuffer;
+    private Long bufferUserId;
     private Boat.BoatBuilder boatBuilder;
 
     public AdminBotInterface(MessageService messageService, DBUserService userService, DBBoatService boatService) {
@@ -45,8 +42,8 @@ public class AdminBotInterface {
 
         try {
             switch (action) {
-                case ADD_BOAT -> addBoatInSystem(user, update);
-                case ADD_BOAT_TO_CAPTAIN -> addBoatToCaptain(user, update);
+                case ADD_BOAT_IN_SYSTEM -> addBoatInSystem(user, update);
+                case ADD_BOAT_TO_CAPTAIN, REMOVE_CAPTAINS_BOAT -> captainsBoatActions(user, update);
                 default -> adminMenu(user, update);
             }
         } catch (Exception e) {
@@ -95,10 +92,11 @@ public class AdminBotInterface {
                 messageService.sendText(user.getChatId(), "успешно добавлена яхта" + boat);
                 sendMenu(user);
             }
+            default -> messageService.sendText(user.getChatId(), "logger error");
         }
     }
 
-    private void addBoatToCaptain(User user, Update update) {
+    private void captainsBoatActions(User user, Update update) {
         int step = userService.nextStep(user);
 
         if (step == 0) {
@@ -117,18 +115,37 @@ public class AdminBotInterface {
 
         switch (step) {
             case 1 -> {
-                userBuffer = userService.getUserWithBoats(id);
-                sendBoats(user);
+                bufferUserId = id;
+                if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
+                    sendAllBoats(user);
+                } else {
+                    sendUsersBoats(user, userService.getUserWithBoats(id));
+                }
             }
             case 2 -> {
-                Boat boat = boatService.getBoatWithUsers(id);
-                userBuffer.addBoat(boat);
-                userService.updateUser(userBuffer);
-                messageService.sendText(chatId, "пользователю " + userBuffer + " успешно добавлена яхта " + boat);
-                userBuffer = null;
+                boolean isOk;
+                if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
+                    isOk = userService.addBoatToUser(bufferUserId, id);
+                } else {
+                    isOk = userService.removeUsersBoat(bufferUserId, id);
+                }
+                user = updateAdminUser(user);
+                if (isOk) {
+                    messageService.sendText(chatId, "ok");
+                } else {
+                    messageService.sendText(chatId, "something wrong");
+                }
                 sendMenu(user);
             }
+            default -> messageService.sendText(user.getChatId(), "logger error");
         }
+    }
+
+    private User updateAdminUser(User user) {
+        if (bufferUserId.equals(user.getId())) {
+            user = userService.getUser(bufferUserId);
+        }
+        return user;
     }
 
     public void sendMenu(User user) {
@@ -140,21 +157,29 @@ public class AdminBotInterface {
         sendInlineKeyboard(user, getUsersInlineButtons(), "choose captain");
     }
 
-    private void sendBoats(User user) {
-        sendInlineKeyboard(user, getBoatsInlineButtons(), "choose boat");
+    private void sendAllBoats(User user) {
+        sendInlineKeyboard(user, getBoatsInlineButtons(boatService.getBoats()), "choose boat");
+    }
+
+    private void sendUsersBoats(User userChat, User userBoats) {
+        sendInlineKeyboard(userChat, getBoatsInlineButtons(userBoats.getBoats().stream().toList()), "choose boat");
     }
 
     public void adminMenu(User user, Update update) {
-        String point = update.getCallbackQuery().getData();
+        Action action = Action.valueOf(update.getCallbackQuery().getData());
 
-        switch (point) {
+        switch (action) {
             case ADD_BOAT_IN_SYSTEM -> {
-                userService.setAction(user, Action.ADD_BOAT);
+                userService.setAction(user, Action.ADD_BOAT_IN_SYSTEM);
                 addBoatInSystem(user, update);
             }
             case ADD_BOAT_TO_CAPTAIN -> {
                 userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
-                addBoatToCaptain(user, update);
+                captainsBoatActions(user, update);
+            }
+            case REMOVE_CAPTAINS_BOAT -> {
+                userService.setAction(user, Action.REMOVE_CAPTAINS_BOAT);
+                captainsBoatActions(user, update);
             }
             default -> captainInterface.sendMenu(user);
         }
@@ -190,10 +215,8 @@ public class AdminBotInterface {
         return rows;
     }
 
-    private List<List<InlineKeyboardButton>> getBoatsInlineButtons() {
+    private List<List<InlineKeyboardButton>> getBoatsInlineButtons(List<Boat> boats) {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-
-        List<Boat> boats = boatService.getBoats();
 
         for (Boat boat : boats) {
             rows.add(List.of(
@@ -211,13 +234,14 @@ public class AdminBotInterface {
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("добавить яхту капитану").callbackData(ADD_BOAT_TO_CAPTAIN).build()
+                InlineKeyboardButton.builder().text("добавить яхту капитану").callbackData(Action.ADD_BOAT_TO_CAPTAIN.toString()).build(),
+                InlineKeyboardButton.builder().text("удалить яхту капитана").callbackData(Action.REMOVE_CAPTAINS_BOAT.toString()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("добавить яхту").callbackData(ADD_BOAT_IN_SYSTEM).build()
+                InlineKeyboardButton.builder().text("добавить яхту").callbackData(Action.ADD_BOAT_IN_SYSTEM.toString()).build()
         ));
         rows.add(List.of(
-                InlineKeyboardButton.builder().text("назад").callbackData(BACK).build()
+                InlineKeyboardButton.builder().text("назад").callbackData(Action.INACTIVE.toString()).build()
         ));
 
         return rows;

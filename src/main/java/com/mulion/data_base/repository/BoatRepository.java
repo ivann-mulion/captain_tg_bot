@@ -55,12 +55,11 @@ public class BoatRepository implements Repository<Boat, Long> {
     }
 
     @Override
-    public Boat update(Boat boat) {
+    public void update(Boat boat) {
         try (Session session = sessionFactory.openSession()) {
             Transaction transaction = session.beginTransaction();
             session.merge(boat);
             transaction.commit();
         }
-        return boat;
     }
 }
