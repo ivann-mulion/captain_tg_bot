@@ -1,7 +1,6 @@
 package com.mulion.data_base.repositories;
 
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import java.util.List;
 import java.util.Optional;

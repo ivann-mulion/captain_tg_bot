@@ -43,7 +43,7 @@ public class ReportService {
         List<Record> records;
         try {
             records = RecordService.getRecords(user, date);
-        } catch (AuthenticationException e) {
+        } catch (AuthenticationException _) {
             return null;
         }
         return records;

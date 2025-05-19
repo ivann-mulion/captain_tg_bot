@@ -46,10 +46,10 @@ public class RecordImpl implements Record {
         String pre = "пред : ";
         String boat = "борт : ";
         String aq = "экв  : ";
-        if (!transactionRecords.get(0).getAccount().isCash() && transactionRecords.size() != 1) {
-            paymants.put(pre, transactionRecords.get(0).getAmount());
-            prepayment += transactionRecords.get(0).getAmount();
-            transactionRecords.remove(0);
+        if (!transactionRecords.getFirst().getAccount().isCash() && transactionRecords.size() != 1) {
+            paymants.put(pre, transactionRecords.getFirst().getAmount());
+            prepayment += transactionRecords.getFirst().getAmount();
+            transactionRecords.removeFirst();
         }
         for (PaymentTransactionRecord transaction : transactionRecords) {
             if (transaction.getAccount().isCash()) {

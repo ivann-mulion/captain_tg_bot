@@ -57,7 +57,7 @@ public class ManagerBotInterface {
                 case ADD_BOAT_TO_CAPTAIN, REMOVE_CAPTAINS_BOAT -> captainsBoatActions(user, update);
                 default -> managerMenu(user, update);
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             sendMenu(user);
         }
     }

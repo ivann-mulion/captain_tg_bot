@@ -4,7 +4,6 @@ import com.mulion.constants.BotMassageTexts;
 import com.mulion.constants.Config;
 import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
-import com.mulion.models.Boat;
 import com.mulion.models.User;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
@@ -39,7 +38,7 @@ public class CaptainBotInterface {
                 case CHANGE_BOAT -> changeBot(user, update);
                 default -> defaultReceived(user, update);
             }
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             sendBaseMenu(user);
         }
     }
@@ -57,8 +56,9 @@ public class CaptainBotInterface {
             try {
                 LocalDate date = LocalDate.parse(messageText, Config.reportDateFormatter);
                 sendReport(chatId, user.getId(), date);
-            } catch (RuntimeException e) {
-                e.printStackTrace();
+            } catch (RuntimeException _) {
+                messageService.sendText(user.getChatId(), "some wrong");
+                sendBaseMenu(user);
             }
         }
 
@@ -94,12 +94,11 @@ public class CaptainBotInterface {
     private void captainMenu(User user, Update update) {
         Action action = Action.valueOf(update.getCallbackQuery().getData());
 
-        switch (action) {
-            case CHANGE_BOAT -> {
-                userService.setAction(user, Action.CHANGE_BOAT);
-                changeBot(user, update);
-            }
-            default -> sendBaseMenu(user);
+        if (action == Action.CHANGE_BOAT) {
+            userService.setAction(user, Action.CHANGE_BOAT);
+            changeBot(user, update);
+        } else {
+            sendBaseMenu(user);
         }
     }
 

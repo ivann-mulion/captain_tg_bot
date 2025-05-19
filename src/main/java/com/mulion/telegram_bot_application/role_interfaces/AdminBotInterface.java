@@ -56,7 +56,7 @@ public class AdminBotInterface {
                 case SET_USERS_ROLE -> setUsersRole(user, update);
                 default -> adminMenu(user, update);
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             sendMenu(user);
         }
     }
@@ -105,7 +105,7 @@ public class AdminBotInterface {
                     }
                     boatBuilder = Boat.builder().id(boatId);
                     messageService.sendText(user.getChatId(), "теперь давай имя яхты");
-                } catch (NumberFormatException e) {
+                } catch (NumberFormatException _) {
                     messageService.sendText(user.getChatId(), "некорректный staff_id, все по новой давай");
                     sendMenu(user);
                 }

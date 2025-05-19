@@ -55,7 +55,7 @@ public class DBUserService {
             user.addBoat(boatService.getBoat(boatId));
             updateUser(user);
             return true;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }
@@ -66,7 +66,7 @@ public class DBUserService {
             user.removeBoat(boatService.getBoat(boatId));
             updateUser(user);
             return true;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }
@@ -77,7 +77,7 @@ public class DBUserService {
             user.setRole(userRole);
             updateUser(user);
             return true;
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return false;
         }
     }

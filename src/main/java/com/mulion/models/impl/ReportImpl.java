@@ -53,7 +53,7 @@ public class ReportImpl implements Report {
         StringBuilder result = new StringBuilder();
         result.append(date.format(reportDateFormatter))
                 .append(String.format(" (%s) - %s%n%s%n",
-                        date.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("ru")),
+                        date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.of("ru")),
                         boat.getName(),
                         DELIMITER));
         records.forEach(re -> result.append(re).append('\n'));
@@ -67,9 +67,5 @@ public class ReportImpl implements Report {
                 .append("\nчасов отработано : ")
                 .append(workHours);
         return result.toString();
-    }
-
-    private String formatWithUnderscores(int number) {
-        return String.format("%,d", number).replace(',', '_');
     }
 }

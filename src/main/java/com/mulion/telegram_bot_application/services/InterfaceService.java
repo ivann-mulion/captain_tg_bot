@@ -37,8 +37,8 @@ public class InterfaceService {
         Long id = null;
         try {
             id = Long.valueOf(update.getCallbackQuery().getData());
-        } catch (NumberFormatException e) {
-            messageService.sendText(user.getChatId(), "id parsing error - " + id);
+        } catch (NumberFormatException _) {
+            messageService.sendText(user.getChatId(), "id parsing error - " + update.getCallbackQuery().getData());
         }
         return id;
     }

@@ -146,6 +146,12 @@ public class BotApplication extends TelegramLongPollingBot {
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
             }
+            default -> {
+                messageService.sendText(chatId, BotMassageTexts.REGISTRATION_ERROR);
+                userService.restartAction(user);
+                registration(user, update);
+                return;
+            }
         }
         System.out.println(user);
     }

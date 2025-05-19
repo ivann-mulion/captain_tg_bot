@@ -2,6 +2,8 @@ package com.mulion.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -31,6 +33,15 @@ public class Boat {
 
     @ManyToMany
     @ToString.Exclude
+    @JoinTable(
+            name = "users_to_boats",
+            joinColumns = {
+                    @JoinColumn(name = "boat_id", referencedColumnName = "id")
+            },
+            inverseJoinColumns = {
+                    @JoinColumn(name = "user_id", referencedColumnName = "id")
+            }
+    )
     private final List<User> users = new ArrayList<>();
 
     public void addUser(User user) {
