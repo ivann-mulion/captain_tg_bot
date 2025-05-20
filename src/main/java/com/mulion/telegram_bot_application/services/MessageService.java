@@ -50,6 +50,7 @@ public class MessageService extends DefaultAbsSender {
     }
 
     public void removeInlineButtons(User user) {
+        if (user.getBotLastMessageId() == null) return;
         long chatId = user.getChatId();
         int messageId = user.getBotLastMessageId();
 
@@ -59,6 +60,7 @@ public class MessageService extends DefaultAbsSender {
         editMarkup.setReplyMarkup(null);
 
         editMessage(editMarkup);
+        user.setBotLastMessageId(null);
     }
 
     private Integer sendMessage(SendMessage message) {

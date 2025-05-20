@@ -105,7 +105,7 @@ public class CaptainBotInterface {
         int step = user.getActionStep().nextStep();
 
         if (step == 0) {
-            sendCaptainsBoats(userService.getUserWithBoats(user.getId()));
+            sendCaptainsBoats(user, userService.getUserWithBoats(user.getId()));
             return;
         }
 
@@ -133,8 +133,8 @@ public class CaptainBotInterface {
         user.getActionStep().setAction(Action.CAPTAIN_MENU);
     }
 
-    private void sendCaptainsBoats(User user) {
-        messageService.sendInlineKeyboard(user,
+    private void sendCaptainsBoats(User mainUser, User user) {
+        messageService.sendInlineKeyboard(mainUser,
                 interfaceService.getBoatsInlineButtons(user.getBoats().stream().toList()),
                 "choose boat");
     }
