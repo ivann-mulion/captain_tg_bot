@@ -27,9 +27,9 @@ public class YCUserService {
             JsonNode node = mapper.readTree(response.body());
 
             user.setUserToken(node.path("data").path("user_token").asText());
-        } catch (IOException | FailedLoginException e) {
+        } catch (IOException | FailedLoginException _) {
             return false;
-        }  catch (InterruptedException e) {
+        }  catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return false;
         }

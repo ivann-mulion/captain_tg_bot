@@ -101,12 +101,12 @@ public class AdminBotInterface {
             case 1 -> {
                 try {
                     Long boatId = Long.valueOf(message);
-                    if (!YCBoatService.isBoat(boatId)) {
-                        throw new NumberFormatException();
+                    if (!YCBoatService.isBoat(user, boatId)) {
+                        throw new IllegalArgumentException();
                     }
                     boatBuilder = Boat.builder().id(boatId);
                     messageService.sendText(user.getChatId(), "теперь давай имя яхты");
-                } catch (NumberFormatException _) {
+                } catch (IllegalArgumentException _) {
                     messageService.sendText(user.getChatId(), "некорректный staff_id, все по новой давай");
                     sendMenu(user);
                 }

@@ -11,10 +11,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class HTTPRequestsImpl implements HTTPRequests {
-
     public static final String AUTH_URI = "/auth";
     public static final String RECORDS_URI = "/records";
     public static final String VISIT_URI = "/visit/details";
+    public static final String COMPANY_STAFF_URI = "/company/%s/staff/%s";
     public static final String ACCEPT_HEADER = "application/vnd.api.v2+json";
     public static final String CONTENT_TYPE = "application/json";
     public static final String AUTHORIZATION = "Authorization";
@@ -54,18 +54,32 @@ public class HTTPRequestsImpl implements HTTPRequests {
     public HttpRequest getVisitDetailsRequest(User user, DataRecord dataRecord) {
         URI uri = URI.create(Config.BASE_URL + VISIT_URI +
                 String.format("/%d/%s/%s", Config.COMPANY_ID, dataRecord.getId(), dataRecord.getVisitId()));
-        return getBaseRequest(uri)
-                .header(AUTHORIZATION, String.format("Bearer %s, User %s",
-                        Config.PARTNER_TOKEN,
-                        user.getUserToken()))
+        return getRequestWithPartnerToken(user, uri)
                 .GET()
                 .build();
     }
+
+    @Override
+    public HttpRequest getStaffRequest(User user, Long staffId) {
+        URI uri = URI.create(Config.BASE_URL +
+                String.format(COMPANY_STAFF_URI, Config.COMPANY_ID, staffId.toString()));
+        return getRequestWithPartnerToken(user, uri)
+                .GET()
+                .build();
+    }
+
 
     private HttpRequest.Builder getBaseRequest(URI uri) {
         return HttpRequest.newBuilder()
                 .uri(uri)
                 .header("Accept", ACCEPT_HEADER)
                 .header("Content-Type", CONTENT_TYPE);
+    }
+
+    private HttpRequest.Builder getRequestWithPartnerToken(User user, URI uri) {
+        return getBaseRequest(uri)
+                .header(AUTHORIZATION, String.format("Bearer %s, User %s",
+                        Config.PARTNER_TOKEN,
+                        user.getUserToken()));
     }
 }

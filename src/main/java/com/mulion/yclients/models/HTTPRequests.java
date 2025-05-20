@@ -14,4 +14,6 @@ public interface HTTPRequests {
     HttpRequest getRecordsRequest(User user, LocalDate start, LocalDate end, int page);
 
     HttpRequest getVisitDetailsRequest(User user, DataRecord dataRecord);
+
+    HttpRequest getStaffRequest(User user, Long staffId);
 }
