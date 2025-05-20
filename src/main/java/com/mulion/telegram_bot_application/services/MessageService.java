@@ -5,7 +5,6 @@ import org.telegram.telegrambots.bots.DefaultAbsSender;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -47,12 +46,12 @@ public class MessageService extends DefaultAbsSender {
         markup.setKeyboard(rows);
         message.setReplyMarkup(markup);
 
-        sendMessage(message);
+        user.setBotLastMessageId(sendMessage(message));
     }
 
-    public void removeInlineButtons(CallbackQuery callbackQuery) {
-        long chatId = callbackQuery.getMessage().getChatId();
-        int messageId = callbackQuery.getMessage().getMessageId();
+    public void removeInlineButtons(User user) {
+        long chatId = user.getChatId();
+        int messageId = user.getBotLastMessageId();
 
         EditMessageReplyMarkup editMarkup = new EditMessageReplyMarkup();
         editMarkup.setChatId(chatId);
@@ -62,11 +61,12 @@ public class MessageService extends DefaultAbsSender {
         editMessage(editMarkup);
     }
 
-    private void sendMessage(SendMessage message) {
+    private Integer sendMessage(SendMessage message) {
         try {
-            execute(message);
+            return execute(message).getMessageId();
         } catch (TelegramApiException e) {
             e.printStackTrace();
+            return null;
         }
     }
 }

@@ -35,7 +35,7 @@ public class CaptainBotInterface {
         try {
             switch (action) {
                 case CAPTAIN_MENU -> captainMenu(user, update);
-                case CHANGE_BOAT -> changeBot(user, update);
+                case CHANGE_BOAT -> changeBoat(user, update);
                 default -> defaultReceived(user, update);
             }
         } catch (RuntimeException _) {
@@ -55,7 +55,7 @@ public class CaptainBotInterface {
         if (messageText.matches("\\d{2}.\\d{2}.\\d{4}")) {
             try {
                 LocalDate date = LocalDate.parse(messageText, Config.reportDateFormatter);
-                sendReport(chatId, user.getId(), date);
+                sendReport(chatId, user, date);
             } catch (RuntimeException _) {
                 messageService.sendText(user.getChatId(), "some wrong");
                 sendBaseMenu(user);
@@ -69,11 +69,10 @@ public class CaptainBotInterface {
         String data = callbackQuery.getData();
         DateMenu date = DateMenu.valueOf(data);
         long chatId = callbackQuery.getMessage().getChatId();
-        long userId = callbackQuery.getFrom().getId();
 
         switch (date) {
-            case YESTERDAY -> sendReport(chatId, userId, LocalDate.now().minusDays(1));
-            case TODAY -> sendReport(chatId, userId, LocalDate.now());
+            case YESTERDAY -> sendReport(chatId, user, LocalDate.now().minusDays(1));
+            case TODAY -> sendReport(chatId, user, LocalDate.now());
             case CUSTOM_DATE -> messageService.sendText(chatId, BotMassageTexts.INPUT_DATE_MESSAGE);
             case CAPTAIN_MENU -> {
                 sendCaptainMenu(user);
@@ -95,15 +94,15 @@ public class CaptainBotInterface {
         Action action = Action.valueOf(update.getCallbackQuery().getData());
 
         if (action == Action.CHANGE_BOAT) {
-            userService.setAction(user, Action.CHANGE_BOAT);
-            changeBot(user, update);
+            user.getActionStep().setAction(Action.CHANGE_BOAT);
+            changeBoat(user, update);
         } else {
             sendBaseMenu(user);
         }
     }
 
-    private void changeBot(User user, Update update) {
-        int step = userService.nextStep(user);
+    private void changeBoat(User user, Update update) {
+        int step = user.getActionStep().nextStep();
 
         if (step == 0) {
             sendCaptainsBoats(userService.getUserWithBoats(user.getId()));
@@ -120,18 +119,18 @@ public class CaptainBotInterface {
         sendBaseMenu(user);
     }
 
-    private void sendReport(long chatId, long userId, LocalDate date) {
-        messageService.sendText(chatId, ReportService.getReportMessage(userService.getUser(userId), date, boatService));
+    private void sendReport(long chatId, User user, LocalDate date) {
+        messageService.sendText(chatId, ReportService.getReportMessage(user, date, boatService));
     }
 
     public void sendBaseMenu(User user) {
-        userService.inactive(user);
         messageService.sendInlineKeyboard(user, getBaseMenuInlineButtons(user), BotMassageTexts.CHOOSE_DATE_MESSAGE);
+        user.getActionStep().inactivate();
     }
 
     private void sendCaptainMenu(User user) {
-        userService.setAction(user, Action.CAPTAIN_MENU);
         messageService.sendInlineKeyboard(user, getCaptainInlineButtons(), "menu");
+        user.getActionStep().setAction(Action.CAPTAIN_MENU);
     }
 
     private void sendCaptainsBoats(User user) {

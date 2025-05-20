@@ -34,14 +34,11 @@ public class BotApplication extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasCallbackQuery()) {
-            clearInlineButton(update);
-        }
-
         Long userId = getUserId(update);
         if (userId == null) return;
 
         User user = userService.getUser(userId);
+        messageService.removeInlineButtons(user);
 
         if (!checkUser(update, user, userId)) return;
 
@@ -51,6 +48,8 @@ public class BotApplication extends TelegramLongPollingBot {
             case MANAGER -> managerInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
         }
+
+        userService.updateUser(user);
     }
 
     public BotApplication(String token) {
@@ -142,7 +141,6 @@ public class BotApplication extends TelegramLongPollingBot {
                     return;
                 }
                 userService.inactive(user);
-                userService.updateUser(user);
                 messageService.sendText(chatId, BotMassageTexts.REGISTRATION_DONE);
                 onUpdateReceived(update);
             }
@@ -154,9 +152,5 @@ public class BotApplication extends TelegramLongPollingBot {
             }
         }
         System.out.println(user);
-    }
-
-    private void clearInlineButton(Update update) {
-        messageService.removeInlineButtons(update.getCallbackQuery());
     }
 }

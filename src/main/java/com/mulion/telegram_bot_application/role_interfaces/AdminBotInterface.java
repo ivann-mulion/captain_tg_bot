@@ -66,11 +66,12 @@ public class AdminBotInterface {
 
         switch (action) {
             case ADD_BOAT_IN_SYSTEM -> {
-                userService.setAction(user, Action.ADD_BOAT_IN_SYSTEM);
+
+                user.getActionStep().setAction(Action.ADD_BOAT_IN_SYSTEM);
                 addBoatInSystem(user, update);
             }
             case SET_USERS_ROLE -> {
-                userService.setAction(user, Action.SET_USERS_ROLE);
+                user.getActionStep().setAction(Action.SET_USERS_ROLE);
                 setUsersRole(user, update);
             }
             default -> captainInterface.sendBaseMenu(user);
@@ -87,7 +88,7 @@ public class AdminBotInterface {
     }
 
     private void addBoatInSystem(User user, Update update) {
-        int step = userService.nextStep(user);
+        int step = user.getActionStep().nextStep();
 
         if (step == 0) {
             messageService.sendText(user.getChatId(), "введи staff_id яхты");
@@ -122,7 +123,7 @@ public class AdminBotInterface {
     }
 
     private void setUsersRole(User user, Update update) {
-        int step = userService.nextStep(user);
+        int step = user.getActionStep().nextStep();
 
         if (step == 0) {
             interfaceService.sendCaptains(user);
@@ -145,7 +146,7 @@ public class AdminBotInterface {
                 } else {
                     messageService.sendText(user.getChatId(), "something wrong");
                 }
-                user = interfaceService.updateAdminUser(user, bufferUserId);
+                interfaceService.updateAdminUser(user, bufferUserId);
                 sendMenu(user);
             }
             default -> messageService.sendText(user.getChatId(), "logger error");
@@ -153,8 +154,8 @@ public class AdminBotInterface {
     }
 
     public void sendMenu(User user) {
-        userService.setAction(user, Action.ADMIN_MENU);
         messageService.sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
+        user.getActionStep().setAction(Action.ADMIN_MENU);
     }
 
     private List<List<InlineKeyboardButton>> getMenuInlineButtons() {

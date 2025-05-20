@@ -95,10 +95,12 @@ public class InterfaceService {
         return rows;
     }
 
-    public User updateAdminUser(User user, Long userId) {
+    public void updateAdminUser(User user, Long userId) {
         if (userId.equals(user.getId())) {
-            user = userService.getUser(userId);
+            User newUser = userService.getUser(userId);
+            user.setRole(newUser.getRole());
+            user.setStaffId(newUser.getStaffId());
+            user.setBoatsCount(newUser.getBoatsCount());
         }
-        return user;
     }
 }

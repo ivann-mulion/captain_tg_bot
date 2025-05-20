@@ -44,16 +44,6 @@ public class Boat {
     )
     private final List<User> users = new ArrayList<>();
 
-    public void addUser(User user) {
-        if (user == null) return;
-        users.add(user);
-    }
-
-    public void removeUser(User user) {
-        if (user == null) return;
-        users.remove(user);
-    }
-
     @Override
     public final boolean equals(Object o) {
         if (this == o) return true;

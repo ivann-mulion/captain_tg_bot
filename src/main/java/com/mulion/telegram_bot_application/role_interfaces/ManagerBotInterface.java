@@ -67,11 +67,11 @@ public class ManagerBotInterface {
 
         switch (action) {
             case ADD_BOAT_TO_CAPTAIN -> {
-                userService.setAction(user, Action.ADD_BOAT_TO_CAPTAIN);
+                user.getActionStep().setAction(Action.ADD_BOAT_TO_CAPTAIN);
                 captainsBoatActions(user, update);
             }
             case REMOVE_CAPTAINS_BOAT -> {
-                userService.setAction(user, Action.REMOVE_CAPTAINS_BOAT);
+                user.getActionStep().setAction(Action.REMOVE_CAPTAINS_BOAT);
                 captainsBoatActions(user, update);
             }
             default -> captainInterface.sendBaseMenu(user);
@@ -88,7 +88,7 @@ public class ManagerBotInterface {
     }
 
     private void captainsBoatActions(User user, Update update) {
-        int step = userService.nextStep(user);
+        int step = user.getActionStep().nextStep();
 
         if (step == 0) {
             interfaceService.sendCaptains(user);
@@ -107,7 +107,14 @@ public class ManagerBotInterface {
                 if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
                     interfaceService.sendAllBoats(user);
                 } else {
-                    interfaceService.sendCaptainsBoats(user, userService.getUserWithBoats(id));
+                    User bufferUser = userService.getUserWithBoats(id);
+                    if (bufferUser.getBoatsCount() > 0) {
+                        interfaceService.sendCaptainsBoats(user, bufferUser);
+                    } else {
+                        messageService.sendText(user.getChatId(), String.format("user %s hasn't some boats",
+                                bufferUser.getName()));
+                        sendMenu(user);
+                    }
                 }
             }
             case 2 -> {
@@ -117,7 +124,7 @@ public class ManagerBotInterface {
                 } else {
                     isOk = userService.removeUsersBoat(bufferUserId, id);
                 }
-                user = interfaceService.updateAdminUser(user, bufferUserId);
+                interfaceService.updateAdminUser(user, bufferUserId);
                 if (isOk) {
                     messageService.sendText(user.getChatId(), "ok");
                 } else {
@@ -130,7 +137,7 @@ public class ManagerBotInterface {
     }
 
     public void sendMenu(User user) {
-        userService.setAction(user, Action.MANAGER_MENU);
+        user.getActionStep().setAction(Action.MANAGER_MENU);
         messageService.sendInlineKeyboard(user, getMenuInlineButtons(), "menu");
     }
 

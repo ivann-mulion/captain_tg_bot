@@ -15,6 +15,9 @@ import java.util.List;
 
 public class ReportService {
     public static Report getReport(User user, LocalDate date, DBBoatService boatService) {
+        if (user.getStaffId() == null) {
+            return null;
+        }
         List<Record> records = tryGetRecords(user, date);
         if (records != null) {
             return new ReportImpl(user, date, records, boatService.getBoat(user.getStaffId()));

@@ -42,6 +42,8 @@ public class User {
     private String tgUserName;
     @Column(name = "chat_id")
     private Long chatId;
+    @Column(name = "bot_last_message_id")
+    private Integer botLastMessageId;
     private String name;
     @Column(name = "user_token")
     private String userToken;
