@@ -19,7 +19,7 @@ public class YCUserService {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != HttpStatusCodes.OK) {
+            if (response.statusCode() != HttpStatusCodes.CREATED) {
                 throw new FailedLoginException();
             }
 
