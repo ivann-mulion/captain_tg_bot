@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +23,6 @@ import java.util.Objects;
 @Table(name = "boats")
 @Getter
 @Setter
-@ToString
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,7 +30,6 @@ public class Boat {
     @Id
     private Long id;
     String name;
-
     @ManyToMany
     @ToString.Exclude
     @JoinTable(
@@ -43,6 +42,9 @@ public class Boat {
             }
     )
     private final List<User> users = new ArrayList<>();
+    @OneToMany(mappedBy = "boat")
+    private List<Report> reports = new ArrayList<>();
+
 
     @Override
     public final boolean equals(Object o) {

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mulion.constants.HttpStatusCodes;
 import com.mulion.models.User;
 import com.mulion.models.Record;
-import com.mulion.models.impl.RecordImpl;
 import com.mulion.yclients.models.responses.DataRecord;
 import com.mulion.yclients.models.responses.PaymentTransactionRecord;
 
@@ -43,7 +42,7 @@ public class RecordService {
                 HttpRequest visitRequest = httpRequests.getVisitDetailsRequest(user, dataRecord);
                 response = getResponse(visitRequest, user);
 
-                result.add(new RecordImpl(dataRecord, getShortTransactions(response.body())));
+                result.add(new Record(dataRecord, getShortTransactions(response.body())));
             }
         } catch (AuthenticationException e) {
             throw e;

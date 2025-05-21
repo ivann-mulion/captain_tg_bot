@@ -6,8 +6,6 @@ import com.mulion.models.enums.UserRole;
 import com.mulion.models.ActionSteps;
 import com.mulion.models.User;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
-import org.hibernate.Session;
 
 import java.util.List;
 
@@ -18,14 +16,6 @@ public class DBUserService {
 
     public User getUser(Long userId) {
         return repository.findById(userId).orElse(null);
-    }
-
-    public User getUserWithBoats(Long userId) {
-        try (Session session = repository.openSession()) {
-            User user = session.get(User.class, userId);
-            Hibernate.initialize(user.getBoats());
-            return user;
-        }
     }
 
     public List<User> getUsers() {
@@ -51,7 +41,7 @@ public class DBUserService {
 
     public boolean addBoatToUser(Long userId, Long boatId) {
         try {
-            User user = getUserWithBoats(userId);
+            User user = getUser(userId);
             user.addBoat(boatService.getBoat(boatId));
             updateUser(user);
             return true;
@@ -62,7 +52,7 @@ public class DBUserService {
 
     public boolean removeUsersBoat(Long userId, Long boatId) {
         try {
-            User user = getUserWithBoats(userId);
+            User user = getUser(userId);
             user.removeBoat(boatService.getBoat(boatId));
             updateUser(user);
             return true;
@@ -86,11 +76,6 @@ public class DBUserService {
         int step = user.getActionStep().nextStep();
         updateUser(user);
         return step;
-    }
-
-    public void setAction(User user, Action action) {
-        user.getActionStep().setAction(action);
-        updateUser(user);
     }
 
     public void restartAction(User user) {

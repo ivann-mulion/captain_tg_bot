@@ -6,6 +6,7 @@ import com.mulion.models.Boat;
 import com.mulion.models.User;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
+import com.mulion.services.ReportService;
 import com.mulion.telegram_bot_application.services.InterfaceService;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCBoatService;
@@ -29,7 +30,10 @@ public class AdminBotInterface {
     private Long bufferUserId;
     private Boat.BoatBuilder boatBuilder;
 
-    public AdminBotInterface(MessageService messageService, DBUserService userService, DBBoatService boatService) {
+    public AdminBotInterface(MessageService messageService,
+                             DBUserService userService,
+                             DBBoatService boatService,
+                             ReportService reportService) {
         this.messageService = messageService;
         this.userService = userService;
         this.boatService = boatService;
@@ -37,7 +41,7 @@ public class AdminBotInterface {
         this.managerInterface = new ManagerBotInterface(
                 messageService,
                 interfaceService,
-                boatService,
+                reportService,
                 userService,
                 this);
         this.captainInterface = managerInterface.getCaptainInterface();

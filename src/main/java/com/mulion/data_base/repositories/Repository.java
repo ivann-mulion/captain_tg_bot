@@ -14,9 +14,7 @@ public interface Repository<T, ID> {
 
     void delete(T t);
 
-    void deleteById(ID id);
-
     void update(T t);
 
-    Session openSession();
+    Session getSession();
 }

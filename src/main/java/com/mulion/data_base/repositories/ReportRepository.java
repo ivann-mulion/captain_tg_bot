@@ -1,7 +1,8 @@
 package com.mulion.data_base.repositories;
 
 import com.mulion.data_base.SessionProvider;
-import com.mulion.models.Boat;
+import com.mulion.models.Report;
+import com.mulion.models.ReportId;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -10,43 +11,43 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public class BoatRepository implements Repository<Boat, Long> {
+public class ReportRepository implements Repository<Report, ReportId> {
     private final SessionProvider provider;
 
     @Override
-    public Optional<Boat> findById(Long id) {
+    public Optional<Report> findById(ReportId id) {
         Session session = provider.getSession();
-        return Optional.ofNullable(session.get(Boat.class, id));
+        return Optional.ofNullable(session.get(Report.class, id));
     }
 
     @Override
-    public List<Boat> findAll() {
+    public List<Report> findAll() {
         Session session = provider.getSession();
-        return session.createQuery("from Boat", Boat.class).list();
+        return session.createQuery("from Report", Report.class).list();
     }
 
     @Override
-    public void create(Boat boat) {
+    public void create(Report report) {
         Session session = provider.getSession();
         Transaction transaction = session.beginTransaction();
-        session.persist(boat);
+        session.persist(report);
         transaction.commit();
     }
 
     @Override
-    public void delete(Boat boat) {
+    public void delete(Report report) {
         Session session = provider.getSession();
         Transaction transaction = session.beginTransaction();
-        session.remove(boat);
+        session.remove(report);
         transaction.commit();
     }
 
     @Override
-    public void update(Boat boat) {
+    public void update(Report report) {
         Session session = provider.getSession();
-        Transaction transaction = session.beginTransaction();
-        session.merge(boat);
-        transaction.commit();
+            Transaction transaction = session.beginTransaction();
+            session.merge(report);
+            transaction.commit();
     }
 
     @Override

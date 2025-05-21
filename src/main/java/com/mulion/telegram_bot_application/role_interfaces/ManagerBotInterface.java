@@ -1,10 +1,10 @@
 package com.mulion.telegram_bot_application.role_interfaces;
 
-import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.User;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
+import com.mulion.services.ReportService;
 import com.mulion.telegram_bot_application.services.InterfaceService;
 import com.mulion.telegram_bot_application.services.MessageService;
 import lombok.Getter;
@@ -29,7 +29,7 @@ public class ManagerBotInterface {
     public ManagerBotInterface(
             MessageService messageService,
             InterfaceService interfaceService,
-            DBBoatService boatService,
+            ReportService reportService,
             DBUserService userService,
             AdminBotInterface adminInterface) {
         this.messageService = messageService;
@@ -38,7 +38,7 @@ public class ManagerBotInterface {
         this.captainInterface = new CaptainBotInterface(
                 messageService,
                 interfaceService,
-                boatService,
+                reportService,
                 userService,
                 adminInterface,
                 this
@@ -107,7 +107,7 @@ public class ManagerBotInterface {
                 if (user.getActionStep().getAction() == Action.ADD_BOAT_TO_CAPTAIN) {
                     interfaceService.sendAllBoats(user);
                 } else {
-                    User bufferUser = userService.getUserWithBoats(id);
+                    User bufferUser = userService.getUser(id);
                     if (bufferUser.getBoatsCount() > 0) {
                         interfaceService.sendCaptainsBoats(user, bufferUser);
                     } else {

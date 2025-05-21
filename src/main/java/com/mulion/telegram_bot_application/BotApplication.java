@@ -3,19 +3,22 @@ package com.mulion.telegram_bot_application;
 import com.mulion.constants.BotMassageTexts;
 import com.mulion.data_base.SessionProvider;
 import com.mulion.data_base.repositories.BoatRepository;
+import com.mulion.data_base.repositories.ReportRepository;
 import com.mulion.data_base.repositories.UserRepository;
 import com.mulion.data_base.services.DBBoatService;
+import com.mulion.data_base.services.DBReportService;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.enums.Action;
 import com.mulion.models.enums.UserRole;
 import com.mulion.models.User;
 import com.mulion.services.ConfigService;
+import com.mulion.services.ReportService;
 import com.mulion.telegram_bot_application.role_interfaces.AdminBotInterface;
 import com.mulion.telegram_bot_application.role_interfaces.CaptainBotInterface;
 import com.mulion.telegram_bot_application.role_interfaces.ManagerBotInterface;
 import com.mulion.telegram_bot_application.services.MessageService;
 import com.mulion.yclients.services.YCUserService;
-import org.hibernate.SessionFactory;
+import org.hibernate.Session;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,7 +28,7 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 public class BotApplication extends TelegramLongPollingBot {
     public static final String TOKEN = "tg.token";
     public static final String BOT_USER_NAME = "tg.bot_user_name";
-
+    private final SessionProvider provider;
     private final DBUserService userService;
     private final MessageService messageService;
     private final AdminBotInterface adminInterface;
@@ -37,6 +40,13 @@ public class BotApplication extends TelegramLongPollingBot {
         Long userId = getUserId(update);
         if (userId == null) return;
 
+        try (Session session = provider.getSessionFactory().openSession()) {
+            provider.setSession(session);
+            sessionStart(update, userId);
+        }
+    }
+
+    private void sessionStart(Update update, Long userId) {
         User user = userService.getUser(userId);
         messageService.removeInlineButtons(user);
 
@@ -48,17 +58,17 @@ public class BotApplication extends TelegramLongPollingBot {
             case MANAGER -> managerInterface.onUpdateReceived(user, update);
             default -> captainInterface.onUpdateReceived(user, update);
         }
-
         userService.updateUser(user);
     }
 
     public BotApplication(String token) {
         super(token);
-        SessionFactory sessionFactory = new SessionProvider().getSessionFactory();
-        DBBoatService boatService = new DBBoatService(new BoatRepository(sessionFactory));
-        userService = new DBUserService(new UserRepository(sessionFactory), boatService);
+        provider = new SessionProvider();
+        DBBoatService boatService = new DBBoatService(new BoatRepository(provider));
+        ReportService reportService = new ReportService(boatService, new DBReportService(new ReportRepository(provider)));
+        userService = new DBUserService(new UserRepository(provider), boatService);
         messageService = new MessageService(getOptions(), token);
-        adminInterface = new AdminBotInterface(messageService, userService, boatService);
+        adminInterface = new AdminBotInterface(messageService, userService, boatService, reportService);
         managerInterface = adminInterface.getManagerInterface();
         captainInterface = adminInterface.getCaptainInterface();
     }

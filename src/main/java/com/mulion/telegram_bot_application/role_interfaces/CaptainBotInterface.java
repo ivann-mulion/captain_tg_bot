@@ -2,7 +2,6 @@ package com.mulion.telegram_bot_application.role_interfaces;
 
 import com.mulion.constants.BotMassageTexts;
 import com.mulion.constants.Config;
-import com.mulion.data_base.services.DBBoatService;
 import com.mulion.data_base.services.DBUserService;
 import com.mulion.models.User;
 import com.mulion.models.enums.Action;
@@ -24,7 +23,7 @@ import java.util.List;
 public class CaptainBotInterface {
     private final MessageService messageService;
     private final InterfaceService interfaceService;
-    private final DBBoatService boatService;
+    private final ReportService reportService;
     private final DBUserService userService;
     private final AdminBotInterface adminInterface;
     private final ManagerBotInterface managerInterface;
@@ -105,7 +104,7 @@ public class CaptainBotInterface {
         int step = user.getActionStep().nextStep();
 
         if (step == 0) {
-            sendCaptainsBoats(user, userService.getUserWithBoats(user.getId()));
+            sendCaptainsBoats(user, userService.getUser(user.getId()));
             return;
         }
 
@@ -120,7 +119,7 @@ public class CaptainBotInterface {
     }
 
     private void sendReport(long chatId, User user, LocalDate date) {
-        messageService.sendText(chatId, ReportService.getReportMessage(user, date, boatService));
+        messageService.sendText(chatId, reportService.getReportMessage(user, date));
     }
 
     public void sendBaseMenu(User user) {

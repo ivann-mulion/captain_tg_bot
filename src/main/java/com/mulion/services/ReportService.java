@@ -1,48 +1,63 @@
 package com.mulion.services;
 
+import com.mulion.data_base.services.DBReportService;
+import com.mulion.models.Record;
+import com.mulion.models.Report;
 import com.mulion.constants.ErrorsMessages;
 import com.mulion.data_base.services.DBBoatService;
 import com.mulion.models.User;
-import com.mulion.models.Record;
-import com.mulion.models.Report;
-import com.mulion.models.impl.ReportImpl;
 import com.mulion.yclients.services.RecordService;
 import com.mulion.yclients.services.YCUserService;
+import lombok.RequiredArgsConstructor;
 
 import javax.naming.AuthenticationException;
 import java.time.LocalDate;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class ReportService {
-    public static Report getReport(User user, LocalDate date, DBBoatService boatService) {
-        if (user.getStaffId() == null) {
-            return null;
-        }
-        List<Record> records = tryGetRecords(user, date);
-        if (records != null) {
-            return new ReportImpl(user, date, records, boatService.getBoat(user.getStaffId()));
-        }
+    private final DBBoatService boatService;
+    private final DBReportService dbReportService;
 
-        if (!YCUserService.authorization(user)) {
-            return null;
-        }
-
-        records = tryGetRecords(user, date);
-        if (records != null) {
-            return new ReportImpl(user, date, records, boatService.getBoat(user.getStaffId()));
-        }
-        return null;
-    }
-
-    public static String getReportMessage(User user, LocalDate date, DBBoatService boatService) {
-        Report report = getReport(user, date, boatService);
+    public String getReportMessage(User user, LocalDate date) {
+        Report report = getReport(user, date);
         if (report == null) {
             return ErrorsMessages.AUTH_ERROR;
         }
         return report.getReportMessage();
     }
 
-    private static List<Record> tryGetRecords(User user, LocalDate date) {
+    private Report getReport(User user, LocalDate date) {
+        if (user.getStaffId() == null) {
+            return null;
+        }
+        Report report = getReportFromDB(user, date);
+        if (report != null) {
+            return report;
+        }
+        List<Record> records = tryGetRecords(user, date);
+        if (records != null) {
+            report = new Report(user, date, records, boatService.getBoat(user.getStaffId()));
+            dbReportService.createReport(report);
+            return report;
+        }
+        if (user.getUserToken() == null && !YCUserService.authorization(user)) {
+            return null;
+        }
+        records = tryGetRecords(user, date);
+        if (records != null) {
+            report = new Report(user, date, records, boatService.getBoat(user.getStaffId()));
+            dbReportService.createReport(report);
+            return report;
+        }
+        return null;
+    }
+
+    private Report getReportFromDB(User user, LocalDate date) {
+        return dbReportService.getReport(user.getStaffId(), date);
+    }
+
+    private List<Record> tryGetRecords(User user, LocalDate date) {
         List<Record> records;
         try {
             records = RecordService.getRecords(user, date);
@@ -50,8 +65,5 @@ public class ReportService {
             return null;
         }
         return records;
-    }
-
-    private ReportService() {
     }
 }

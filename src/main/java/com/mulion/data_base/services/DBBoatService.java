@@ -22,8 +22,4 @@ public class DBBoatService {
         repository.create(boat);
         return boat;
     }
-
-    public void updateBoat(Boat boat) {
-        repository.update(boat);
-    }
 }
